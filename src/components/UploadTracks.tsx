@@ -100,34 +100,25 @@ const UploadTracks: React.FC = () => {
 
   return (
     <div>
-      <form onSubmit={(e) => e.preventDefault()}>
-        <label htmlFor="file_upload">
-          Files to upload
-          <input
-            id="file_upload"
-            name="file"
-            type="file"
-            onChange={onFilesUploadChange}
-            multiple
-          />
-        </label>
-      </form>
+      <label htmlFor="file_upload">
+        Files to upload
+        <input
+          id="file_upload"
+          name="file"
+          type="file"
+          onChange={onFilesUploadChange}
+          multiple
+        />
+      </label>
       {Object.entries(uploadingTracks).map((el, index) => {
         const filename = el[0];
         const track = el[1];
 
         return (
           <div key={index}>
-            <div className="border-2 border-white">
-              <div className="flex">
-                <div>{filename}</div>
-                <div>{track.progress}</div>
-                <div>{track.isUploading ? "Uploading..." : "Uploaded"}</div>
-              </div>
-
-              <div>{track.title}</div>
-              <div>{track.artist}</div>
-              <div>{track.album}</div>
+            <div className="flex">
+              <div>{track.isUploading ? filename : track.title}</div>
+              <div>{track.progress && track.progress * 100}</div>
             </div>
           </div>
         );
