@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import {
   PauseIcon,
@@ -6,6 +6,7 @@ import {
   SkipBackwardIcon,
   SkipForwardIcon,
 } from "./icons/player";
+import usePlayerStore from "@/store";
 
 interface IPlayerButton {
   icon: ReactNode;
@@ -20,37 +21,65 @@ const PlayerButton: React.FC<IPlayerButton> = ({ icon, onClick }) => {
 const Player: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  const { isPlaying, currentTrack, setIsPlaying } = usePlayerStore(
+    (state) => state
+  );
+
   const onSkipBackward = () => {};
 
   const onSkipForward = () => {};
 
-  const onPause = () => {};
+  useEffect(() => {
+    if (audioRef.current) {
+      if (isPlaying) audioRef.current.play().then((res) => {});
+      else audioRef.current.pause();
+    }
+  }, [isPlaying]);
 
-  const onPlay = () => {};
+  useEffect(() => {
+    if (audioRef.current) {
+      if (isPlaying) audioRef.current.play().then((res) => {});
+      else audioRef.current.pause();
+    }
+  }, [currentTrack]);
 
-  const onEnded = () => {};
+  const handlePlay = () => {
+    setIsPlaying(true);
+  };
+
+  const handlePause = () => {
+    setIsPlaying(false);
+  };
+
+  const handleEnded = () => {
+    setIsPlaying(false);
+  };
 
   return (
     <>
       <div className="flex border-b border-white border-opacity-10 py-1">
         <div className="flex basis-3/5 items-center truncate">
-          <audio ref={audioRef} src={undefined} onEnded={onEnded} />
+          <audio
+            ref={audioRef}
+            src={currentTrack?.source}
+            onEnded={handleEnded}
+          />
 
           <img className="w-12 h-12 bg-cyan-500 m-3 shrink-0" src={undefined} />
 
           <div className="flex flex-col truncate">
-            <p className="truncate">{undefined}</p>
-            <p className="truncate">{undefined}</p>
+            <p className="truncate">{currentTrack?.title}</p>
+            <p className="truncate">{currentTrack?.artist}</p>
           </div>
         </div>
 
         <div className="flex basis-2/5 justify-center space-x-4">
           <PlayerButton icon={<SkipBackwardIcon />} onClick={onSkipBackward} />
 
-          {false ? (
-            <PlayerButton icon={<PauseIcon />} onClick={onPause} />
+          {isPlaying ? (
+            <PlayerButton icon={<PauseIcon />} onClick={handlePause} />
           ) : (
-            <PlayerButton icon={<PlayIcon />} onClick={onPlay} />
+            <PlayerButton icon={<PlayIcon />} onClick={handlePlay} />
           )}
 
           <PlayerButton icon={<SkipForwardIcon />} onClick={onSkipForward} />
