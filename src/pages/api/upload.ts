@@ -1,4 +1,4 @@
-import { Data } from "@/types";
+import { TrackType } from "@/types";
 import { parseFile } from "music-metadata";
 import { PageConfig, NextApiRequest, NextApiResponse } from "next";
 import { unstable_getServerSession } from "next-auth";
@@ -21,7 +21,7 @@ export const config: PageConfig = {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<Data>
+  res: NextApiResponse<TrackType>
 ) {
   const session = await unstable_getServerSession(req, res, authOptions);
 
@@ -53,7 +53,7 @@ export default async function handler(
     };
 
     /* CREATE RECORD IN DATABASE */
-    await prisma.track.create({
+    const resp = await prisma.track.create({
       data: {
         user: {
           connect: {
@@ -67,6 +67,7 @@ export default async function handler(
 
     /* RESPONSE TO THE CLIENT */
     res.status(200).json({
+      id: resp.id,
       ...trackInfo,
     });
   } catch (error) {

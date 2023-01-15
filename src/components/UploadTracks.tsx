@@ -1,6 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
-import type { Data } from "../types";
+import type { TrackType } from "../types";
 import type { ChangeEvent } from "react";
 
 interface UploadingTracks {
@@ -59,7 +59,7 @@ const UploadTracks: React.FC = () => {
         form.append("media", validFiles[i]);
 
         axios
-          .post<Data>(`/api/upload`, form, {
+          .post<TrackType>(`/api/upload`, form, {
             headers: {
               "Content-Type": "multipart/form-data",
             },
