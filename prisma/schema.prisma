@@ -10,6 +10,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Cover {
+  id            String @id @default(uuid())
+  source        String
+  dominantColor String
+
+  tracks    Track[]
+  playlists Playlist[]
+}
+
 model Track {
   id       String @id @default(uuid())
   title    String
@@ -17,6 +26,9 @@ model Track {
   album    String
   source   String
   duration Float
+
+  coverId String?
+  cover   Cover?  @relation(fields: [coverId], references: [id], onDelete: Cascade)
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String
@@ -30,11 +42,13 @@ model Track {
 model Playlist {
   id          String  @id @default(uuid())
   title       String
-  image       String?
   description String?
   duration    Int     @default(0)
   isAlbum     Boolean @default(false)
   isPublic    Boolean @default(false)
+
+  coverId String?
+  cover   Cover?  @relation(fields: [coverId], references: [id], onDelete: Cascade)
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String

@@ -1,11 +1,15 @@
 import { TrackType } from "@/types";
-import { parseFile } from "music-metadata";
 import { PageConfig, NextApiRequest, NextApiResponse } from "next";
 import { unstable_getServerSession } from "next-auth";
 import prisma from "../../lib/prismadb";
 import { authOptions } from "./auth/[...nextauth]";
 import { v2 } from "cloudinary";
 import { FormidableError, parseForm } from "@/lib/parse-form";
+import { tmpdir } from "os";
+import { nanoid } from "nanoid";
+import mime from "mime";
+import { parseFile } from "music-metadata";
+import { writeFileSync } from "fs";
 
 v2.config({
   cloud_name: process.env.cloud_name,
@@ -44,6 +48,23 @@ export default async function handler(
     /* PARSE METADATA OF TRACK */
     const { common, format } = await parseFile(file.filepath);
 
+    let cover = null;
+    let dominantColor = null;
+    const coverFile = common.picture?.pop();
+
+    if (coverFile) {
+      const path = tmpdir() + nanoid() + mime.getExtension(coverFile.format);
+
+      writeFileSync(path, coverFile.data);
+
+      const { secure_url } = await v2.uploader.upload(path, {
+        folder: "covers",
+        resource_type: "image",
+      });
+
+      cover = secure_url;
+    }
+
     /* CREATE OBJECT CONTAINS TRACK INFO */
     const trackInfo = {
       source,
@@ -61,9 +82,17 @@ export default async function handler(
           },
         },
         ...trackInfo,
+        cover: {
+          create: {
+            source: cover ?? "",
+            dominantColor: dominantColor ?? "",
+          },
+        },
         duration: format.duration ?? 0,
       },
     });
+
+    console.log("KALL");
 
     /* RESPONSE TO THE CLIENT */
     res.status(200).json({
