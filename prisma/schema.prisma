@@ -27,8 +27,8 @@ model Track {
   source   String
   duration Float
 
-  coverId String?
-  cover   Cover?  @relation(fields: [coverId], references: [id], onDelete: Cascade)
+  coverId String
+  cover   Cover  @relation(fields: [coverId], references: [id], onDelete: Cascade)
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String
@@ -47,8 +47,8 @@ model Playlist {
   isAlbum     Boolean @default(false)
   isPublic    Boolean @default(false)
 
-  coverId String?
-  cover   Cover?  @relation(fields: [coverId], references: [id], onDelete: Cascade)
+  coverId String
+  cover   Cover  @relation(fields: [coverId], references: [id], onDelete: Cascade)
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String

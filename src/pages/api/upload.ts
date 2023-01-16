@@ -48,8 +48,8 @@ export default async function handler(
     /* PARSE METADATA OF TRACK */
     const { common, format } = await parseFile(file.filepath);
 
-    let cover = null;
-    let dominant = null;
+    let cover = "";
+    let dominantColor = "";
     const coverFile = common.picture?.pop();
 
     if (coverFile) {
@@ -86,21 +86,19 @@ export default async function handler(
         cover: {
           create: {
             source: cover ?? "",
-            dominantColor: dominant ?? "",
+            dominantColor: dominantColor ?? "",
           },
         },
         duration: format.duration ?? 0,
       },
     });
 
-    console.log("KALL");
-
     /* RESPONSE TO THE CLIENT */
     res.status(200).json({
       id: resp.id,
       cover: {
         source: cover,
-        dominant: dominant ?? "",
+        dominantColor: dominantColor ?? "",
       },
       ...trackInfo,
     });

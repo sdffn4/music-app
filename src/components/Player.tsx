@@ -65,7 +65,14 @@ const Player: React.FC = () => {
             onEnded={handleEnded}
           />
 
-          <img className="w-12 h-12 bg-cyan-500 m-3 shrink-0" src={undefined} />
+          <img
+            className="w-12 h-12 bg-cyan-500 m-3 shrink-0"
+            src={
+              currentTrack?.cover.source
+                ? currentTrack?.cover.source
+                : undefined
+            }
+          />
 
           <div className="flex flex-col truncate">
             <p className="truncate">{currentTrack?.title}</p>

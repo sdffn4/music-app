@@ -5,7 +5,7 @@ export type TrackType = {
   album: string;
   source: string;
   cover: {
-    source: string | null;
-    dominant: string;
+    source: string;
+    dominantColor: string;
   };
 };

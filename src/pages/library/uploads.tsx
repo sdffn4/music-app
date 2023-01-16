@@ -37,6 +37,12 @@ export const getServerSideProps = async (
       artist: true,
       duration: true,
       source: true,
+      cover: {
+        select: {
+          source: true,
+          dominantColor: true,
+        },
+      },
     },
     orderBy: {
       createdAt: "desc",
