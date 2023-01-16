@@ -4,4 +4,8 @@ export type TrackType = {
   artist: string;
   album: string;
   source: string;
+  cover: {
+    source: string | null;
+    dominant: string;
+  };
 };

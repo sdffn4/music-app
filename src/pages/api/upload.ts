@@ -49,7 +49,7 @@ export default async function handler(
     const { common, format } = await parseFile(file.filepath);
 
     let cover = null;
-    let dominantColor = null;
+    let dominant = null;
     const coverFile = common.picture?.pop();
 
     if (coverFile) {
@@ -68,6 +68,7 @@ export default async function handler(
     /* CREATE OBJECT CONTAINS TRACK INFO */
     const trackInfo = {
       source,
+
       artist: common.albumartist ?? "Unknown",
       title: common.title ?? "Unknown",
       album: common.albumartist ?? "Unknown",
@@ -85,7 +86,7 @@ export default async function handler(
         cover: {
           create: {
             source: cover ?? "",
-            dominantColor: dominantColor ?? "",
+            dominantColor: dominant ?? "",
           },
         },
         duration: format.duration ?? 0,
@@ -97,6 +98,10 @@ export default async function handler(
     /* RESPONSE TO THE CLIENT */
     res.status(200).json({
       id: resp.id,
+      cover: {
+        source: cover,
+        dominant: dominant ?? "",
+      },
       ...trackInfo,
     });
   } catch (error) {
