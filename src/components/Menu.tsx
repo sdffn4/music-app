@@ -38,35 +38,35 @@ const Menu = () => {
 
   return (
     <div className="flex justify-around">
-      <Link className={`py-3`} href={`/`}>
+      <Link className={`p-3 w-full`} href={`/`}>
         <MenuButton
           isActive={pathname === `/`}
           activeIcon={<HomeIconActive />}
           passiveIcon={<HomeIconPassive />}
         />
       </Link>
-      <Link className={`py-3`} href={`/library`}>
+      <Link className={`p-3 w-full`} href={`/library`}>
         <MenuButton
           isActive={pathname === `/library`}
           activeIcon={<LibraryIconActive />}
           passiveIcon={<LibraryIconPassive />}
         />
       </Link>
-      <Link className={`py-3`} href={`/queue`}>
+      <Link className={`p-3 w-full`} href={`/queue`}>
         <MenuButton
           isActive={pathname === `/queue`}
           activeIcon={<QueueIconActive />}
           passiveIcon={<QueueIconPassive />}
         />
       </Link>
-      <Link className={`py-3`} href={`/search`}>
+      <Link className={`p-3 w-full`} href={`/search`}>
         <MenuButton
           isActive={pathname === `/search`}
           activeIcon={<SearchIconActive />}
           passiveIcon={<SearchIconPassive />}
         />
       </Link>
-      <Link className={`py-3`} href={`/profile`}>
+      <Link className={`p-3 w-full`} href={`/profile`}>
         <MenuButton
           isActive={pathname === `/profile`}
           activeIcon={<UserIconActive />}
