@@ -7,6 +7,7 @@ import {
   SkipForwardIcon,
 } from "./icons/player";
 import usePlayerStore from "@/store";
+import Image from "next/image";
 
 interface IPlayerButton {
   icon: ReactNode;
@@ -65,14 +66,17 @@ const Player: React.FC = () => {
             onEnded={handleEnded}
           />
 
-          <img
-            className="w-12 h-12 bg-cyan-500 m-3 shrink-0"
-            src={
-              currentTrack?.cover.source
-                ? currentTrack?.cover.source
-                : undefined
-            }
-          />
+          <div className="w-12 h-12 m-3 shrink-0 relative">
+            <Image
+              fill={true}
+              alt="cover"
+              src={
+                currentTrack?.cover.source
+                  ? currentTrack?.cover.source
+                  : "/vercel.svg"
+              }
+            />
+          </div>
 
           <div className="flex flex-col truncate">
             <p className="truncate">{currentTrack?.title}</p>
