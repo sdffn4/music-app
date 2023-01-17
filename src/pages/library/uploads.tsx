@@ -5,6 +5,7 @@ import UploadTracks from "../../components/UploadTracks";
 import { authOptions } from "../api/auth/[...nextauth]";
 import usePlayerStore from "@/store";
 import { TrackType } from "@/types";
+import Track from "@/components/Track";
 
 export const getServerSideProps = async (
   context: GetServerSidePropsContext
@@ -76,18 +77,19 @@ export default function Uploads({
   return (
     <div>
       <UploadTracks />
-      <div>
+      <div className="flex flex-col divide-y divide-white divide-opacity-10 mx-6">
         {tracks.length > 0 ? (
-          tracks.map((track) => {
+          tracks.map((track, index) => {
             const isActive = track.id === currentTrack?.id && isPlaying;
             return (
-              <div
+              <Track
                 key={track.id}
-                className={`${isActive ? "font-bold" : ""}`}
+                // className={`${isActive ? "font-bold" : ""}`}
+                index={index + 1}
+                isActive={isActive}
+                title={track.title}
                 onClick={() => handleClick(track)}
-              >
-                {track.title}
-              </div>
+              />
             );
           })
         ) : (
