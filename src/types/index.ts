@@ -9,3 +9,10 @@ export type TrackType = {
     dominantColor: string;
   };
 };
+
+export type PlaylistType = {
+  id: string;
+  title: string;
+  description: string;
+  cover: string;
+};
