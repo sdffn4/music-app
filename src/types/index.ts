@@ -4,7 +4,7 @@ export type TrackType = {
   artist: string;
   album: string;
   source: string;
-  cover: {
+  cover?: {
     source: string;
     dominantColor: string;
   } | null;
@@ -14,5 +14,8 @@ export type PlaylistType = {
   id: string;
   title: string;
   description: string;
-  cover: string;
+  cover?: {
+    source: string;
+    dominantColor: string;
+  } | null;
 };
