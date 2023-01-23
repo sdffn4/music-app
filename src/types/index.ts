@@ -7,7 +7,7 @@ export type TrackType = {
   cover: {
     source: string;
     dominantColor: string;
-  };
+  } | null;
 };
 
 export type PlaylistType = {
