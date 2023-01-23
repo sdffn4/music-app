@@ -40,7 +40,10 @@ export default async function handler(
       id: resp.id,
       title: resp.title,
       description: resp.description,
-      cover: "",
+      cover: {
+        dominantColor: "",
+        source: "",
+      },
     });
   } catch (error) {
     return res.status(500);
