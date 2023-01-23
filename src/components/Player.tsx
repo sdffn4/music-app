@@ -71,7 +71,7 @@ const Player: React.FC = () => {
               fill={true}
               alt="cover"
               src={
-                currentTrack?.cover.source
+                currentTrack?.cover?.source
                   ? currentTrack?.cover.source
                   : "/vercel.svg"
               }
