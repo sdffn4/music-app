@@ -67,15 +67,7 @@ const Player: React.FC = () => {
           />
 
           <div className="w-12 h-12 m-3 shrink-0 relative">
-            <Image
-              fill={true}
-              alt="cover"
-              src={
-                currentTrack?.cover?.source
-                  ? currentTrack?.cover.source
-                  : "/vercel.svg"
-              }
-            />
+            <Image fill={true} alt="cover" src={"/vercel.svg"} />
           </div>
 
           <div className="flex flex-col truncate">
