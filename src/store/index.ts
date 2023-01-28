@@ -21,6 +21,8 @@ interface Store {
   setQueueInstance: (index: number) => void;
   setQueue: (index: number, tracks: TrackType[]) => void;
 
+  addToQueue: (track: TrackType) => void;
+
   skipBackward: () => void;
   skipForward: () => void;
 }
@@ -50,6 +52,25 @@ const usePlayerStore = create<Store, [["zustand/devtools", Store]]>(
           index,
         },
       })),
+
+    addToQueue: (track: TrackType) =>
+      set((state) => {
+        if (state.queue.instances.length === 0) {
+          return {
+            queue: {
+              index: 0,
+              instances: [{ id: nanoid(), track }],
+            },
+          };
+        } else {
+          return {
+            queue: {
+              ...state.queue,
+              instances: [...state.queue.instances, { id: nanoid(), track }],
+            },
+          };
+        }
+      }),
 
     skipBackward: () =>
       set((state) => {
