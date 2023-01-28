@@ -8,6 +8,7 @@ import {
   QueryClientProvider,
   Hydrate,
 } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 export default function App({
   Component,
@@ -21,6 +22,7 @@ export default function App({
         <SessionProvider session={session}>
           <Layout>
             <Component {...pageProps} />
+            <ReactQueryDevtools initialIsOpen={false} />
           </Layout>
         </SessionProvider>
       </Hydrate>
