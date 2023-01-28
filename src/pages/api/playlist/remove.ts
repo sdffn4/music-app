@@ -14,18 +14,35 @@ export default async function handler(
   req: Request,
   res: NextApiResponse<RemovePlaylistApiResponse>
 ) {
-  if (req.method !== "DELETE") return res.status(405);
+  if (req.method !== "POST") return res.status(405);
 
   const session = await unstable_getServerSession(req, res, authOptions);
 
   if (!session) return res.status(403);
 
+  const { playlistId } = req.body;
+
   try {
-    const { id } = req.query;
+    const playlist = await prisma.playlist.findUnique({
+      where: {
+        id: playlistId,
+      },
+      select: {
+        user: {
+          select: {
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (playlist && playlist.user.email !== session.user?.email) {
+      return res.status(403);
+    }
 
     const resp = await prisma.playlist.delete({
       where: {
-        id,
+        id: playlistId,
       },
     });
 
