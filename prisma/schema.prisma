@@ -10,55 +10,71 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Cover {
-  id            String @id @default(uuid())
-  source        String
-  dominantColor String
-
-  tracks    Track[]
-  playlists Playlist[]
-}
-
-model Track {
-  id       String @id @default(uuid())
-  title    String
-  artist   String
-  album    String
-  source   String
-  duration Float
-
-  coverId String?
-  cover   Cover?  @relation(fields: [coverId], references: [id], onDelete: Cascade)
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String
-
-  playlists Playlist[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model User {
+  id            String         @id @default(uuid())
+  name          String         @default(uuid())
+  avatar        String?
+  playlists     Playlist[]
+  tracks        Track[]
+  subscriptions Subscription[]
+  // NextAuth.js section begin
+  email         String?        @unique
+  emailVerified DateTime?
+  accounts      Account[]
+  sessions      Session[]
+  // NextAuth.js section end
 }
 
 model Playlist {
-  id          String  @id @default(uuid())
-  title       String
-  description String
-  duration    Int     @default(0)
-  isAlbum     Boolean @default(false)
-  isPublic    Boolean @default(false)
-
-  coverId String?
-  cover   Cover?  @relation(fields: [coverId], references: [id], onDelete: Cascade)
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String
-
-  tracks Track[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String              @id @default(uuid())
+  title         String
+  duration      Int                 @default(0)
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  tracks        TracksOnPlaylists[]
+  subscriptions Subscription[]
 }
 
+model Track {
+  id              String              @id @default(uuid())
+  title           String              @default("Not specified")
+  artist          String              @default("Not specified")
+  duration        Int                 @default(0)
+  source          String
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  playlists       TracksOnPlaylists[]
+  uncheckedTracks UncheckedTracks[]
+}
+
+model TracksOnPlaylists {
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  playlistId String
+  track      Track    @relation(fields: [trackId], references: [id])
+  trackId    String
+
+  @@id([playlistId, trackId])
+}
+
+model Subscription {
+  id              String            @id @default(uuid())
+  user            User              @relation(fields: [userId], references: [id])
+  userId          String
+  playlist        Playlist          @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  playlistId      String
+  uncheckedTracks UncheckedTracks[]
+}
+
+model UncheckedTracks {
+  track          Track        @relation(fields: [trackId], references: [id])
+  trackId        String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+  subscriptionId String
+
+  @@id([trackId, subscriptionId])
+}
+
+// NextAuth.js section begin
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -86,22 +102,6 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-
-  tracks    Track[]
-  playlists Playlist[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 model VerificationToken {
   identifier String
   token      String   @unique
@@ -109,3 +109,5 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
+// NextAuth.js section end
