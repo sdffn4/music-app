@@ -40,10 +40,19 @@ const Player: React.FC = () => {
 
   useEffect(() => {
     if (audioRef.current) {
-      if (isPlaying) audioRef.current.play().then((res) => {});
+      audioRef.current.currentTime = 0;
+
+      if (isPlaying) audioRef.current.play();
       else audioRef.current.pause();
     }
   }, [queue.index, isPlaying]);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      if (isPlaying) audioRef.current.play();
+      else audioRef.current.pause();
+    }
+  }, [isPlaying]);
 
   const handlePlay = () => {
     setIsPlaying(true);
