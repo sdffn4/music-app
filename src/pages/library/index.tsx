@@ -1,12 +1,12 @@
 import { useSession } from "next-auth/react";
 import ListItem from "../../components/ListItem";
-import { createPlaylist, fetchLibrary, deletePlaylist } from "@/lib/fetchers";
+import { createPlaylist, removePlaylist } from "@/lib/fetchers";
 import { useState } from "react";
 import { Button, Dropdown, Modal } from "react-daisyui";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { EllipsisIcon } from "@/components/icons";
 import { useRouter } from "next/router";
+import useLibrary from "@/hooks/useLibrary";
 
 export default function Library() {
   const router = useRouter();
@@ -20,10 +20,7 @@ export default function Library() {
 
   const { data: session } = useSession();
 
-  const { data, isLoading: isLoadingQuery } = useQuery({
-    queryKey: ["library"],
-    queryFn: fetchLibrary,
-  });
+  const { data, isLoading: isLoadingQuery } = useLibrary();
 
   const { isLoading: isLoadingCreation, mutate: mutateCreation } = useMutation({
     mutationFn: createPlaylist,
@@ -35,8 +32,8 @@ export default function Library() {
     },
   });
 
-  const { isLoading: isLoadingDeletion, mutate: mutateDeletion } = useMutation({
-    mutationFn: deletePlaylist,
+  const { isLoading: isLoadingRemove, mutate: mutateRemove } = useMutation({
+    mutationFn: removePlaylist,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["library"] }),
   });
 
@@ -51,7 +48,7 @@ export default function Library() {
   };
 
   const handleRemove = (playlistId: string) => {
-    mutateDeletion({ playlistId });
+    mutateRemove({ playlistId });
   };
 
   return (
@@ -129,8 +126,8 @@ export default function Library() {
                     className="p-4 w-max h-full"
                     size="xs"
                     onClick={() => handleRemove(playlist.id)}
-                    loading={isLoadingDeletion}
-                    disabled={isLoadingDeletion}
+                    loading={isLoadingRemove}
+                    disabled={isLoadingRemove}
                   >
                     Remove
                   </Button>
