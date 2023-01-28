@@ -9,3 +9,11 @@ export type CreatePlaylistApiResponse = PlaylistType;
 export interface RemovePlaylistApiResponse {
   id: string;
 }
+
+export interface GetTrackPlaylistPresenseApiResponse {
+  playlists: Array<{
+    tracks: Array<string>;
+    id: string;
+    title: string;
+  }>;
+}
