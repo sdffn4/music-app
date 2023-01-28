@@ -34,19 +34,14 @@ export const getServerSideProps = async (
     select: {
       id: true,
       title: true,
-      album: true,
       artist: true,
-      duration: true,
       source: true,
-      cover: {
+      duration: true,
+      playlists: {
         select: {
-          source: true,
-          dominantColor: true,
+          playlistId: true,
         },
       },
-    },
-    orderBy: {
-      createdAt: "desc",
     },
   });
 
@@ -81,10 +76,11 @@ export default function Uploads({
         {tracks.length > 0 ? (
           tracks.map((track, index) => {
             const isActive = track.id === currentTrack?.id && isPlaying;
+
             return (
               <Track
                 key={track.id}
-                // className={`${isActive ? "font-bold" : ""}`}
+                trackId={track.id}
                 index={index + 1}
                 isActive={isActive}
                 title={track.title}

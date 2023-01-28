@@ -27,7 +27,6 @@ export default async function handler(
     const resp = await prisma.playlist.create({
       data: {
         title,
-        description,
         user: {
           connect: {
             email: session.user?.email as string | undefined,
@@ -39,11 +38,6 @@ export default async function handler(
     return res.status(200).json({
       id: resp.id,
       title: resp.title,
-      description: resp.description,
-      cover: {
-        dominantColor: "",
-        source: "",
-      },
     });
   } catch (error) {
     return res.status(500);

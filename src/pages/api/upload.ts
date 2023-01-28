@@ -68,10 +68,8 @@ export default async function handler(
     /* CREATE OBJECT CONTAINS TRACK INFO */
     const trackInfo = {
       source,
-
       artist: common.albumartist ?? "Unknown",
       title: common.title ?? "Unknown",
-      album: common.albumartist ?? "Unknown",
     };
 
     /* CREATE RECORD IN DATABASE */
@@ -83,23 +81,12 @@ export default async function handler(
           },
         },
         ...trackInfo,
-        cover: {
-          create: {
-            source: cover ?? "",
-            dominantColor: dominantColor ?? "",
-          },
-        },
-        duration: format.duration ?? 0,
       },
     });
 
     /* RESPONSE TO THE CLIENT */
     res.status(200).json({
       id: resp.id,
-      cover: {
-        source: cover,
-        dominantColor: dominantColor ?? "",
-      },
       ...trackInfo,
     });
   } catch (error) {
