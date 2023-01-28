@@ -1,20 +1,19 @@
+import { TrackType } from "@/types";
 import TrackPresence from "./TrackPresence";
 
 interface TrackProps {
-  trackId: string;
+  track: TrackType;
   index: number;
   isActive: boolean;
   dominantColor?: string;
-  title: string;
   onClick: () => void;
 }
 
 const Track: React.FC<TrackProps> = ({
-  trackId,
+  track,
   index,
   isActive,
   dominantColor,
-  title,
   onClick,
 }) => {
   return (
@@ -29,7 +28,7 @@ const Track: React.FC<TrackProps> = ({
           }
           onClick={onClick}
         >
-          {title}
+          {track.title}
         </p>
 
         {/* <div className="flex-1 truncate" onClick={onClick}>
@@ -38,7 +37,7 @@ const Track: React.FC<TrackProps> = ({
           ) : null}
         </div> */}
       </div>
-      <TrackPresence trackId={trackId} />
+      <TrackPresence track={track} />
     </div>
   );
 };
