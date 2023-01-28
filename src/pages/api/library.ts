@@ -25,9 +25,6 @@ export default async function handler(
           email: session.user?.email,
         },
       },
-      orderBy: {
-        createdAt: "desc",
-      },
     });
 
     return res.status(200).json({

@@ -3,6 +3,7 @@ import {
   ShuffleIconActive,
 } from "@/components/icons/player";
 import Track from "@/components/Track";
+import useLibrary from "@/hooks/useLibrary";
 import usePlayerStore from "@/store";
 import { TrackType } from "@/types";
 import {
@@ -34,10 +35,20 @@ export const getStaticProps = async (ctx: GetStaticPropsContext) => {
     select: {
       id: true,
       title: true,
-      description: true,
       duration: true,
-      cover: true,
-      tracks: true,
+      tracks: {
+        select: {
+          track: {
+            select: {
+              id: true,
+              title: true,
+              artist: true,
+              source: true,
+              duration: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -51,13 +62,13 @@ export const getStaticProps = async (ctx: GetStaticPropsContext) => {
 export default function Playlist({
   id,
   title,
-  description,
-  cover,
   duration,
   tracks,
 }: InferGetStaticPropsType<typeof getStaticProps>) {
   const { isPlaying, currentTrack, setCurrentTrack, setIsPlaying } =
     usePlayerStore((state) => state);
+
+  const { data, isLoading: isLoadingQuery } = useLibrary();
 
   const handleClick = (track: TrackType) => {
     if (currentTrack?.id === track.id && isPlaying) setIsPlaying(false);
@@ -118,15 +129,16 @@ export default function Playlist({
       <div className="flex flex-col divide-y divide-white divide-opacity-10 mx-6">
         {tracks && tracks.length > 0 ? (
           tracks.map((track, index) => {
-            const isActive = track.id === currentTrack?.id && isPlaying;
+            const isActive = track.track.id === currentTrack?.id && isPlaying;
+
             return (
               <Track
-                key={track.id}
-                // className={`${isActive ? "font-bold" : ""}`}
+                key={track.track.id}
+                trackId={track.track.id}
                 index={index + 1}
                 isActive={isActive}
-                title={track.title}
-                onClick={() => handleClick(track)}
+                title={track.track.title}
+                onClick={() => handleClick(track.track)}
               />
             );
           })
