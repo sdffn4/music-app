@@ -55,6 +55,7 @@ export const getStaticProps = async (ctx: GetStaticPropsContext) => {
   return {
     props: {
       ...resp,
+      tracks: resp?.tracks.map((track) => ({ ...track.track })),
     },
   };
 };
@@ -65,18 +66,21 @@ export default function Playlist({
   duration,
   tracks,
 }: InferGetStaticPropsType<typeof getStaticProps>) {
-  const { isPlaying, currentTrack, setCurrentTrack, setIsPlaying } =
-    usePlayerStore((state) => state);
+  const { isPlaying, queue, setQueue, setIsPlaying } = usePlayerStore(
+    (state) => state
+  );
+
+  const currentTrack = queue.instances[queue.index]?.track;
 
   const { data, isLoading: isLoadingQuery } = useLibrary();
 
-  const handleClick = (track: TrackType) => {
+  const handleClick = (index: number, track: TrackType) => {
     if (currentTrack?.id === track.id && isPlaying) setIsPlaying(false);
 
     if (currentTrack?.id === track.id && !isPlaying) setIsPlaying(true);
 
-    if (currentTrack?.id !== track.id) {
-      setCurrentTrack(track);
+    if (tracks && currentTrack?.id !== track.id) {
+      setQueue(index, tracks);
       setIsPlaying(true);
     }
   };
@@ -129,16 +133,16 @@ export default function Playlist({
       <div className="flex flex-col divide-y divide-white divide-opacity-10 mx-6">
         {tracks && tracks.length > 0 ? (
           tracks.map((track, index) => {
-            const isActive = track.track.id === currentTrack?.id && isPlaying;
+            const isActive = track.id === currentTrack?.id && isPlaying;
 
             return (
               <Track
-                key={track.track.id}
-                trackId={track.track.id}
+                key={track.id}
+                trackId={track.id}
                 index={index + 1}
                 isActive={isActive}
-                title={track.track.title}
-                onClick={() => handleClick(track.track)}
+                title={track.title}
+                onClick={() => handleClick(index, track)}
               />
             );
           })

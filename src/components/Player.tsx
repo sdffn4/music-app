@@ -22,27 +22,28 @@ const PlayerButton: React.FC<IPlayerButton> = ({ icon, onClick }) => {
 const Player: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  const { isPlaying, currentTrack, setIsPlaying } = usePlayerStore(
-    (state) => state
-  );
+  const { isPlaying, queue, setIsPlaying, skipBackward, skipForward } =
+    usePlayerStore((state) => state);
 
-  const onSkipBackward = () => {};
+  const currentTrack = queue.instances[queue.index]?.track;
 
-  const onSkipForward = () => {};
+  const hasPrevTrack = queue.instances[queue.index - 1];
+  const hasNextTrack = queue.instances[queue.index + 1];
+
+  const onSkipBackward = () => {
+    if (hasPrevTrack) skipBackward();
+  };
+
+  const onSkipForward = () => {
+    if (hasNextTrack) skipForward();
+  };
 
   useEffect(() => {
     if (audioRef.current) {
       if (isPlaying) audioRef.current.play().then((res) => {});
       else audioRef.current.pause();
     }
-  }, [isPlaying]);
-
-  useEffect(() => {
-    if (audioRef.current) {
-      if (isPlaying) audioRef.current.play().then((res) => {});
-      else audioRef.current.pause();
-    }
-  }, [currentTrack]);
+  }, [queue.index, isPlaying]);
 
   const handlePlay = () => {
     setIsPlaying(true);
@@ -53,7 +54,7 @@ const Player: React.FC = () => {
   };
 
   const handleEnded = () => {
-    setIsPlaying(false);
+    if (hasNextTrack) skipForward();
   };
 
   return (
