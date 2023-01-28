@@ -3,17 +3,21 @@ import {
   getTrackPlaylistPresense,
   removeTrackFromPlaylist,
 } from "@/lib/fetchers";
+import usePlayerStore from "@/store";
+import { TrackType } from "@/types";
 import { GetTrackPlaylistPresenseApiResponse } from "@/types/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useState } from "react";
-import { Alert, Button, Checkbox, Dropdown } from "react-daisyui";
+import { Alert, Button, Checkbox, Divider, Dropdown } from "react-daisyui";
 import { EllipsisIcon } from "./icons";
 
 interface TrackPresenceProps {
-  trackId: string;
+  track: TrackType;
 }
 
-const TrackPresence: React.FC<TrackPresenceProps> = ({ trackId }) => {
+const TrackPresence: React.FC<TrackPresenceProps> = ({ track }) => {
+  const { addToQueue } = usePlayerStore((state) => state);
+
   const queryClient = useQueryClient();
 
   const { data: presense, isLoading: isPresenseLoading } = useQuery(
@@ -27,7 +31,7 @@ const TrackPresence: React.FC<TrackPresenceProps> = ({ trackId }) => {
 
   const { mutate: mutateAdd, isLoading: isMutateAddLoading } = useMutation({
     mutationFn: addTrackToPlaylist,
-    onSuccess(data, variables, context) {
+    onSuccess(_, variables) {
       queryClient.setQueryData<GetTrackPlaylistPresenseApiResponse>(
         [`presense`],
         (data) => {
@@ -52,7 +56,7 @@ const TrackPresence: React.FC<TrackPresenceProps> = ({ trackId }) => {
   const { mutate: mutateRemove, isLoading: isMutateRemoveLoading } =
     useMutation({
       mutationFn: removeTrackFromPlaylist,
-      onSuccess(data, variables, context) {
+      onSuccess(_, variables) {
         queryClient.setQueryData<GetTrackPlaylistPresenseApiResponse>(
           [`presense`],
           (data) => {
@@ -84,14 +88,18 @@ const TrackPresence: React.FC<TrackPresenceProps> = ({ trackId }) => {
       .filter((el) => el.id === playlistId)
       .pop();
 
-    return playlist ? playlist.tracks.includes(trackId) : false;
+    return playlist ? playlist.tracks.includes(track.id) : false;
   };
 
   const handleClick = (playlistId: string, isTrackIncluded: boolean) => {
     setLoadingPlaylists((prev) => [...prev, playlistId]);
 
-    if (isTrackIncluded) mutateRemove({ playlistId, trackId });
-    else mutateAdd({ playlistId, trackId });
+    if (isTrackIncluded) mutateRemove({ playlistId, trackId: track.id });
+    else mutateAdd({ playlistId, trackId: track.id });
+  };
+
+  const handleAddToQueue = (track: TrackType) => {
+    addToQueue(track);
   };
 
   return (
@@ -100,6 +108,10 @@ const TrackPresence: React.FC<TrackPresenceProps> = ({ trackId }) => {
         <EllipsisIcon />
       </Dropdown.Toggle>
       <Dropdown.Menu className="w-48 space-y-2">
+        <Button size="sm" onClick={() => handleAddToQueue(track)}>
+          add to queue
+        </Button>
+        <Divider />
         {presense && presense.playlists.length > 0 ? (
           presense?.playlists.map((playlist) => {
             const isTrackIncluded = includesTrack(playlist.id);
@@ -110,7 +122,6 @@ const TrackPresence: React.FC<TrackPresenceProps> = ({ trackId }) => {
             return (
               <Button
                 key={playlist.id}
-                className=""
                 size="sm"
                 disabled={isButtonLoading}
                 onClick={() => handleClick(playlist.id, isTrackIncluded)}

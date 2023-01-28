@@ -83,10 +83,9 @@ export default function Uploads({
             return (
               <Track
                 key={track.id}
-                trackId={track.id}
+                track={track}
                 index={index + 1}
                 isActive={isActive}
-                title={track.title}
                 onClick={() => handleClick(index, track)}
               />
             );
