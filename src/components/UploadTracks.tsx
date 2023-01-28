@@ -74,7 +74,7 @@ const UploadTracks: React.FC = () => {
             },
           })
           .then((res) => {
-            const { title, artist, album, source } = res.data;
+            const { title, artist, source } = res.data;
 
             setUploadingTracks((prev) => ({
               ...prev,
@@ -83,7 +83,6 @@ const UploadTracks: React.FC = () => {
                 isUploading: false,
                 title,
                 artist,
-                album,
                 source,
               },
             }));
