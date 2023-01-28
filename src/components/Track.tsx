@@ -1,6 +1,7 @@
-import { EllipsisIcon } from "./icons";
+import TrackPresence from "./TrackPresence";
 
-interface ITrack {
+interface TrackProps {
+  trackId: string;
   index: number;
   isActive: boolean;
   dominantColor?: string;
@@ -8,7 +9,8 @@ interface ITrack {
   onClick: () => void;
 }
 
-const Track: React.FC<ITrack> = ({
+const Track: React.FC<TrackProps> = ({
+  trackId,
   index,
   isActive,
   dominantColor,
@@ -16,7 +18,7 @@ const Track: React.FC<ITrack> = ({
   onClick,
 }) => {
   return (
-    <div className="flex overflow-auto justify-between py-2">
+    <div className="flex justify-between py-2">
       <div className="flex truncate justify-center items-center">
         <p className="text-xs px-4 opacity-60 ">{index}</p>
 
@@ -36,12 +38,7 @@ const Track: React.FC<ITrack> = ({
           ) : null}
         </div> */}
       </div>
-
-      <div className="flex justify-end items-center">
-        <button className=" px-4">
-          <EllipsisIcon />
-        </button>
-      </div>
+      <TrackPresence trackId={trackId} />
     </div>
   );
 };
