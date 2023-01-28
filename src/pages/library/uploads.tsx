@@ -55,16 +55,19 @@ export const getServerSideProps = async (
 export default function Uploads({
   tracks,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  const { isPlaying, currentTrack, setCurrentTrack, setIsPlaying } =
-    usePlayerStore((state) => state);
+  const { isPlaying, queue, setQueue, setIsPlaying } = usePlayerStore(
+    (state) => state
+  );
 
-  const handleClick = (track: TrackType) => {
+  const currentTrack = queue.instances[queue.index]?.track;
+
+  const handleClick = (index: number, track: TrackType) => {
     if (currentTrack?.id === track.id && isPlaying) setIsPlaying(false);
 
     if (currentTrack?.id === track.id && !isPlaying) setIsPlaying(true);
 
     if (currentTrack?.id !== track.id) {
-      setCurrentTrack(track);
+      setQueue(index, tracks);
       setIsPlaying(true);
     }
   };
@@ -84,7 +87,7 @@ export default function Uploads({
                 index={index + 1}
                 isActive={isActive}
                 title={track.title}
-                onClick={() => handleClick(track)}
+                onClick={() => handleClick(index, track)}
               />
             );
           })
