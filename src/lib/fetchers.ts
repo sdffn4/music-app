@@ -1,5 +1,6 @@
 import type {
   CreatePlaylistApiResponse,
+  GetTrackPlaylistPresenseApiResponse,
   LibraryApiResponse,
 } from "@/types/api";
 import axios from "axios";
@@ -8,25 +9,37 @@ export const fetchLibrary = async () => {
   return (await axios.get<LibraryApiResponse>(`/api/library`)).data;
 };
 
-export const createPlaylist = async ({
-  title,
-  description,
-}: {
+export const createPlaylist = async (args: {
   title: string;
   description: string;
 }) => {
   return (
-    await axios.post<CreatePlaylistApiResponse>(`/api/playlist/create`, {
-      title,
-      description,
-    })
+    await axios.post<CreatePlaylistApiResponse>(`/api/playlist/create`, args)
   ).data;
 };
 
-export const deletePlaylist = async ({
-  playlistId,
-}: {
+export const removePlaylist = async (args: { playlistId: string }) => {
+  return await axios.post(`/api/playlist/remove`, args);
+};
+
+export const addTrackToPlaylist = async (args: {
   playlistId: string;
+  trackId: string;
 }) => {
-  return await axios.delete(`/api/playlist/${playlistId}`);
+  return await axios.post(`/api/track/add`, args);
+};
+
+export const removeTrackFromPlaylist = async (args: {
+  playlistId: string;
+  trackId: string;
+}) => {
+  return await axios.post(`/api/track/remove`, args);
+};
+
+export const getTrackPlaylistPresense = async () => {
+  return (
+    await axios.get<GetTrackPlaylistPresenseApiResponse>(
+      `/api/track-playlist-presense`
+    )
+  ).data;
 };
