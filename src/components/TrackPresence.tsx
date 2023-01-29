@@ -7,7 +7,6 @@ import usePlayerStore from "@/store";
 import { TrackType } from "@/types";
 import { GetTrackPlaylistPresenseApiResponse } from "@/types/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import React, { useState } from "react";
 import { Alert, Button, Checkbox, Divider, Dropdown } from "react-daisyui";
 import { EllipsisIcon } from "./icons";
 
@@ -16,151 +15,224 @@ interface TrackPresenceProps {
 }
 
 const TrackPresence: React.FC<TrackPresenceProps> = ({ track }) => {
-  const { addToQueue } = usePlayerStore((state) => state);
-
   const queryClient = useQueryClient();
 
-  const { data: presense, isLoading: isPresenseLoading } = useQuery(
-    ["presense"],
-    {
-      queryFn: getTrackPlaylistPresense,
-    }
-  );
+  const { addToQueue } = usePlayerStore((state) => state);
 
-  const [loadingPlaylists, setLoadingPlaylists] = useState<string[]>([]);
+  const { data, isLoading } = useQuery(["presense"], {
+    queryFn: getTrackPlaylistPresense,
+  });
 
-  const { mutate: mutateAdd, isLoading: isMutateAddLoading } = useMutation({
+  const playlists = data?.playlists ? data.playlists : [];
+
+  const { mutate: mutateAdd, isLoading: isLoadingAdd } = useMutation({
     mutationFn: addTrackToPlaylist,
-    onSuccess(_, variables) {
+    onMutate: (variables) => {
+      const queryData =
+        queryClient.getQueryData<GetTrackPlaylistPresenseApiResponse>([
+          "presense",
+        ]);
+
       queryClient.setQueryData<GetTrackPlaylistPresenseApiResponse>(
-        [`presense`],
-        (data) => {
-          if (data) {
-            const playlist = data.playlists
+        ["presense"],
+        (previous) => {
+          if (previous && queryData) {
+            const playlist = previous.playlists
               .filter((el) => el.id === variables.playlistId)
               .pop();
 
-            if (playlist) playlist.tracks.push(variables.trackId);
+            const filteredPlaylists = previous.playlists.filter(
+              (el) => el.id !== variables.playlistId
+            );
+
+            if (playlist) {
+              return {
+                playlists: [
+                  ...filteredPlaylists,
+                  {
+                    id: playlist.id,
+                    title: playlist.title,
+                    tracks: [...playlist.tracks, variables.trackId],
+                  },
+                ],
+              };
+            }
           }
 
-          return data ? { ...data } : data;
+          return previous;
         }
       );
 
-      setLoadingPlaylists((prev) => {
-        return prev.filter((playlistId) => playlistId !== variables.playlistId);
-      });
+      return { queryData };
+    },
+    onSuccess() {
+      queryClient.invalidateQueries(["presense"]);
     },
   });
 
-  const { mutate: mutateRemove, isLoading: isMutateRemoveLoading } =
-    useMutation({
-      mutationFn: removeTrackFromPlaylist,
-      onSuccess(_, variables) {
-        queryClient.setQueryData<GetTrackPlaylistPresenseApiResponse>(
-          [`presense`],
-          (data) => {
-            if (data) {
-              const playlist = data.playlists
-                .filter((el) => el.id === variables.playlistId)
-                .pop();
+  const { mutate: mutateRemove, isLoading: isLoadingRemove } = useMutation({
+    mutationFn: removeTrackFromPlaylist,
+    onMutate: async (variables) => {
+      const queryData =
+        queryClient.getQueryData<GetTrackPlaylistPresenseApiResponse>([
+          "presense",
+        ]);
 
-              if (playlist)
-                playlist.tracks = playlist.tracks.filter(
-                  (trackId) => trackId !== variables.trackId
-                );
+      queryClient.setQueryData<GetTrackPlaylistPresenseApiResponse>(
+        ["presense"],
+        (previous) => {
+          if (previous && queryData) {
+            const playlist = previous.playlists
+              .filter((el) => el.id === variables.playlistId)
+              .pop();
+            const filteredPlaylists = previous.playlists.filter(
+              (el) => el.id !== variables.playlistId
+            );
+
+            if (playlist) {
+              return {
+                playlists: [
+                  ...filteredPlaylists,
+                  {
+                    id: playlist.id,
+                    title: playlist.title,
+                    tracks: playlist.tracks.filter(
+                      (el) => el !== variables.trackId
+                    ),
+                  },
+                ],
+              };
             }
-
-            return data ? { ...data } : data;
           }
-        );
 
-        setLoadingPlaylists((prev) => {
-          return prev.filter(
-            (playlistId) => playlistId !== variables.playlistId
-          );
-        });
-      },
-    });
+          return previous;
+        }
+      );
 
-  const includesTrack = (playlistId: string) => {
-    const playlist = presense?.playlists
-      .filter((el) => el.id === playlistId)
-      .pop();
+      return { queryData };
+    },
+    onSuccess() {
+      queryClient.invalidateQueries(["presense"]);
+    },
+  });
 
-    return playlist ? playlist.tracks.includes(track.id) : false;
+  const handlePlaylist = (playlist: DropdownPlaylist, trackId: string) => {
+    if (playlist.tracks.includes(trackId)) {
+      mutateRemove({ playlistId: playlist.id, trackId });
+    } else {
+      mutateAdd({ playlistId: playlist.id, trackId });
+    }
   };
 
-  const handleClick = (playlistId: string, isTrackIncluded: boolean) => {
-    setLoadingPlaylists((prev) => [...prev, playlistId]);
+  return isLoading ? (
+    <div>Loading...</div>
+  ) : (
+    <CustomDropdown
+      handleQueue={() => addToQueue(track)}
+      handlePlaylist={handlePlaylist}
+      trackId={track.id}
+      disabled={isLoadingAdd || isLoadingRemove}
+      playlists={playlists}
+    />
+  );
+};
 
-    if (isTrackIncluded) mutateRemove({ playlistId, trackId: track.id });
-    else mutateAdd({ playlistId, trackId: track.id });
-  };
+interface DropdownPlaylist {
+  id: string;
+  title: string;
+  tracks: Array<string>;
+}
 
-  const handleAddToQueue = (track: TrackType) => {
-    addToQueue(track);
-  };
+interface DropdownProps {
+  handleQueue: () => void;
+  handlePlaylist: (playlist: DropdownPlaylist, trackId: string) => void;
+  trackId: string;
+  disabled: boolean;
+  playlists: Array<DropdownPlaylist>;
+}
 
+const CustomDropdown: React.FC<DropdownProps> = ({
+  handleQueue,
+  handlePlaylist,
+  playlists,
+  trackId,
+  disabled,
+}) => {
   return (
-    <Dropdown className="flex justify-end items-center" hover horizontal="left">
+    <Dropdown className="flex justify-end items-center" horizontal="left" hover>
       <Dropdown.Toggle className=" px-4" size="xs">
         <EllipsisIcon />
       </Dropdown.Toggle>
+
       <Dropdown.Menu className="w-48 space-y-2">
-        <Button size="sm" onClick={() => handleAddToQueue(track)}>
+        <Button size="sm" onClick={handleQueue}>
           add to queue
         </Button>
-        <Divider />
-        {presense && presense.playlists.length > 0 ? (
-          presense?.playlists.map((playlist) => {
-            const isTrackIncluded = includesTrack(playlist.id);
-            const isButtonLoading =
-              loadingPlaylists.includes(playlist.id) &&
-              (isMutateAddLoading || isMutateRemoveLoading);
 
-            return (
-              <Button
-                key={playlist.id}
-                size="sm"
-                disabled={isButtonLoading}
-                onClick={() => handleClick(playlist.id, isTrackIncluded)}
-              >
-                <div className="flex justify-between w-full">
-                  <Checkbox
-                    readOnly
-                    checked={isTrackIncluded}
-                    disabled={isButtonLoading}
-                    size="xs"
-                  />
-                  <p>{playlist.title}</p>
-                </div>
-              </Button>
-            );
-          })
+        <Divider />
+
+        {playlists.length !== 0 ? (
+          playlists.map((playlist) => (
+            <ListItem
+              key={playlist.id}
+              title={playlist.title}
+              disabled={disabled}
+              checked={playlist.tracks.includes(trackId)}
+              onClick={() => handlePlaylist(playlist, trackId)}
+            />
+          ))
         ) : (
-          <Alert
-            icon={
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                className="w-6 h-6 mx-2 stroke-current"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                ></path>
-              </svg>
-            }
-          >
-            You have no playlists.
-          </Alert>
+          <NoPlaylistsAlert />
         )}
       </Dropdown.Menu>
     </Dropdown>
+  );
+};
+
+interface ListItemProps {
+  disabled: boolean;
+  checked: boolean;
+  title: string;
+  onClick: () => void;
+}
+
+const ListItem: React.FC<ListItemProps> = ({
+  disabled,
+  title,
+  checked,
+  onClick,
+}) => {
+  return (
+    <Button size="sm" disabled={disabled} onClick={onClick}>
+      <div className="flex justify-between w-full">
+        <Checkbox readOnly checked={checked} disabled={disabled} size="xs" />
+        <p>{title}</p>
+      </div>
+    </Button>
+  );
+};
+
+const NoPlaylistsAlert: React.FC = () => {
+  return (
+    <Alert
+      icon={
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          className="w-6 h-6 mx-2 stroke-current"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          ></path>
+        </svg>
+      }
+    >
+      You have no playlists.
+    </Alert>
   );
 };
 
