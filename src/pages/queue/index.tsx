@@ -15,6 +15,8 @@ export default function Queue() {
     if (queue.index === index && isPlaying) setIsPlaying(false);
 
     if (queue.index === index && !isPlaying) setIsPlaying(true);
+
+    if (queue.index !== index) setIsPlaying(true);
   };
 
   return (
