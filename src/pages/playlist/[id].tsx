@@ -3,7 +3,7 @@ import {
   ShuffleIconActive,
 } from "@/components/icons/player";
 import Track from "@/components/Track";
-import useLibrary from "@/hooks/useLibrary";
+import useLibrary from "@/hooks/react-query/useLibrary";
 import usePlayerStore from "@/store";
 import { TrackType } from "@/types";
 import {
