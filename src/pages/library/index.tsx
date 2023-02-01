@@ -6,7 +6,7 @@ import { Button, Dropdown, Modal } from "react-daisyui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { EllipsisIcon } from "@/components/icons";
 import { useRouter } from "next/router";
-import useLibrary from "@/hooks/useLibrary";
+import useLibrary from "@/hooks/react-query/useLibrary";
 
 export default function Library() {
   const router = useRouter();
