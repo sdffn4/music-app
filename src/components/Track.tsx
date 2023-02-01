@@ -37,7 +37,7 @@ const Track: React.FC<TrackProps> = ({
           ) : null}
         </div> */}
       </div>
-      <TrackPresence track={track} />
+      <TrackPresence track={track} index={index - 1} />
     </div>
   );
 };
