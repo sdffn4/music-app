@@ -1,23 +1,22 @@
-import {
-  addTrackToPlaylist,
-  getTrackPlaylistPresense,
-  removeTrackFromPlaylist,
-} from "@/lib/fetchers";
+import useAddTrack from "@/hooks/react-query/useAddTrack";
+import useRemoveTrack from "@/hooks/react-query/useRemoveTrack";
+import { getTrackPlaylistPresense } from "@/lib/fetchers";
 import usePlayerStore from "@/store";
 import { TrackType } from "@/types";
-import { GetTrackPlaylistPresenseApiResponse } from "@/types/api";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/router";
 import { Alert, Button, Checkbox, Divider, Dropdown } from "react-daisyui";
 import { EllipsisIcon } from "./icons";
 
 interface TrackPresenceProps {
   track: TrackType;
+  index: number;
 }
 
-const TrackPresence: React.FC<TrackPresenceProps> = ({ track }) => {
-  const queryClient = useQueryClient();
+const TrackPresence: React.FC<TrackPresenceProps> = ({ track, index }) => {
+  const router = useRouter();
 
-  const { addToQueue } = usePlayerStore((state) => state);
+  const { addToQueue, removeFromQueue } = usePlayerStore((state) => state);
 
   const { data, isLoading } = useQuery(["presense"], {
     queryFn: getTrackPlaylistPresense,
@@ -25,96 +24,9 @@ const TrackPresence: React.FC<TrackPresenceProps> = ({ track }) => {
 
   const playlists = data?.playlists ? data.playlists : [];
 
-  const { mutate: mutateAdd, isLoading: isLoadingAdd } = useMutation({
-    mutationFn: addTrackToPlaylist,
-    onMutate: (variables) => {
-      const queryData =
-        queryClient.getQueryData<GetTrackPlaylistPresenseApiResponse>([
-          "presense",
-        ]);
+  const { mutate: mutateAdd, isLoading: isLoadingAdd } = useAddTrack();
 
-      queryClient.setQueryData<GetTrackPlaylistPresenseApiResponse>(
-        ["presense"],
-        (previous) => {
-          if (previous && queryData) {
-            const playlist = previous.playlists
-              .filter((el) => el.id === variables.playlistId)
-              .pop();
-
-            const filteredPlaylists = previous.playlists.filter(
-              (el) => el.id !== variables.playlistId
-            );
-
-            if (playlist) {
-              return {
-                playlists: [
-                  ...filteredPlaylists,
-                  {
-                    id: playlist.id,
-                    title: playlist.title,
-                    tracks: [...playlist.tracks, variables.trackId],
-                  },
-                ],
-              };
-            }
-          }
-
-          return previous;
-        }
-      );
-
-      return { queryData };
-    },
-    onSuccess() {
-      queryClient.invalidateQueries(["presense"]);
-    },
-  });
-
-  const { mutate: mutateRemove, isLoading: isLoadingRemove } = useMutation({
-    mutationFn: removeTrackFromPlaylist,
-    onMutate: async (variables) => {
-      const queryData =
-        queryClient.getQueryData<GetTrackPlaylistPresenseApiResponse>([
-          "presense",
-        ]);
-
-      queryClient.setQueryData<GetTrackPlaylistPresenseApiResponse>(
-        ["presense"],
-        (previous) => {
-          if (previous && queryData) {
-            const playlist = previous.playlists
-              .filter((el) => el.id === variables.playlistId)
-              .pop();
-            const filteredPlaylists = previous.playlists.filter(
-              (el) => el.id !== variables.playlistId
-            );
-
-            if (playlist) {
-              return {
-                playlists: [
-                  ...filteredPlaylists,
-                  {
-                    id: playlist.id,
-                    title: playlist.title,
-                    tracks: playlist.tracks.filter(
-                      (el) => el !== variables.trackId
-                    ),
-                  },
-                ],
-              };
-            }
-          }
-
-          return previous;
-        }
-      );
-
-      return { queryData };
-    },
-    onSuccess() {
-      queryClient.invalidateQueries(["presense"]);
-    },
-  });
+  const { mutate: mutateRemove, isLoading: isLoadingRemove } = useRemoveTrack();
 
   const handlePlaylist = (playlist: DropdownPlaylist, trackId: string) => {
     if (playlist.tracks.includes(trackId)) {
@@ -128,7 +40,10 @@ const TrackPresence: React.FC<TrackPresenceProps> = ({ track }) => {
     <div>Loading...</div>
   ) : (
     <CustomDropdown
-      handleQueue={() => addToQueue(track)}
+      handleAddQueue={() => addToQueue(track)}
+      handleRemoveQueue={
+        router.pathname === "/queue" ? () => removeFromQueue(index) : null
+      }
       handlePlaylist={handlePlaylist}
       trackId={track.id}
       disabled={isLoadingAdd || isLoadingRemove}
@@ -144,7 +59,8 @@ interface DropdownPlaylist {
 }
 
 interface DropdownProps {
-  handleQueue: () => void;
+  handleAddQueue: () => void;
+  handleRemoveQueue: (() => void) | null;
   handlePlaylist: (playlist: DropdownPlaylist, trackId: string) => void;
   trackId: string;
   disabled: boolean;
@@ -152,7 +68,8 @@ interface DropdownProps {
 }
 
 const CustomDropdown: React.FC<DropdownProps> = ({
-  handleQueue,
+  handleAddQueue,
+  handleRemoveQueue,
   handlePlaylist,
   playlists,
   trackId,
@@ -165,9 +82,15 @@ const CustomDropdown: React.FC<DropdownProps> = ({
       </Dropdown.Toggle>
 
       <Dropdown.Menu className="w-48 space-y-2">
-        <Button size="sm" onClick={handleQueue}>
+        <Button size="sm" onClick={handleAddQueue}>
           add to queue
         </Button>
+
+        {handleRemoveQueue ? (
+          <Button size="sm" onClick={handleRemoveQueue}>
+            remove from queue
+          </Button>
+        ) : null}
 
         <Divider />
 

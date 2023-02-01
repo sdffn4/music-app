@@ -25,7 +25,8 @@ const Player: React.FC = () => {
   const { isPlaying, queue, setIsPlaying, skipBackward, skipForward } =
     usePlayerStore((state) => state);
 
-  const currentTrack = queue.instances[queue.index]?.track;
+  const currentInstance = queue.instances[queue.index];
+  const currentTrack = currentInstance?.track;
 
   const hasPrevTrack = queue.instances[queue.index - 1];
   const hasNextTrack = queue.instances[queue.index + 1];
@@ -45,7 +46,7 @@ const Player: React.FC = () => {
       if (isPlaying) audioRef.current.play();
       else audioRef.current.pause();
     }
-  }, [queue, isPlaying]);
+  }, [currentInstance?.id]);
 
   useEffect(() => {
     if (audioRef.current) {
