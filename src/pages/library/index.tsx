@@ -56,7 +56,7 @@ export default function Library() {
       <ListItem text="Uploads" to="/library/uploads" />
 
       <div className="m-4 font-sans flex">
-        <h3>Your playlists</h3>
+        <h3>Playlists</h3>
         <Button size="xs" onClick={toggleVisible}>
           +
         </Button>
@@ -135,6 +135,28 @@ export default function Library() {
               </Dropdown>
             </div>
           ))
+        )}
+      </div>
+
+      <div className="m-4">
+        <h3>Subscriptions</h3>
+
+        {isLoadingQuery ? (
+          <div>Loading...</div>
+        ) : data && data.subscriptions.length > 0 ? (
+          data?.subscriptions.map((sub) => {
+            return (
+              <div
+                key={sub.id}
+                className="flex justify-between items-center hover:bg-white hover:bg-opacity-30 hover:cursor-pointer p-4"
+                onClick={() => router.push(`/playlist/${sub.playlist.id}`)}
+              >
+                <p className="truncate">{sub.playlist.title}</p>
+              </div>
+            );
+          })
+        ) : (
+          <div>You have no subscriptions</div>
         )}
       </div>
     </div>
