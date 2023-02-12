@@ -36,6 +36,16 @@ export const removeTrackFromPlaylist = async (args: {
   return await axios.post(`/api/track/remove`, args);
 };
 
+export const subscribeToPlaylist = async (args: { playlistId: string }) => {
+  return await axios.post(`/api/playlist/subscribe`, args);
+};
+
+export const unsubscribeFromPlaylist = async (args: {
+  subscriptionId: string;
+}) => {
+  return await axios.post(`/api/playlist/unsubscribe`, args);
+};
+
 export const getTrackPlaylistPresense = async () => {
   return (
     await axios.get<GetTrackPlaylistPresenseApiResponse>(
