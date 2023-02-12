@@ -1,8 +1,14 @@
 import { PlaylistType } from ".";
 
-export interface LibraryApiResponse {
-  playlists: Array<{ id: string; title: string }>;
+interface Playlist {
+  id: string;
+  title: string;
 }
+
+export type LibraryApiResponse = {
+  playlists: Array<Playlist>;
+  subscriptions: Array<{ id: string; playlist: Playlist }>;
+};
 
 export type CreatePlaylistApiResponse = PlaylistType;
 
