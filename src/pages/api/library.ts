@@ -15,21 +15,34 @@ export default async function handler(
   if (!session) return res.status(403);
 
   try {
-    const resp = await prisma.playlist.findMany({
-      select: {
-        id: true,
-        title: true,
-      },
+    const resp = await prisma.user.findUnique({
       where: {
-        user: {
-          email: session.user?.email,
+        email: session.user?.email as string | undefined,
+      },
+      select: {
+        playlists: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+        subscriptions: {
+          select: {
+            id: true,
+            playlist: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+          },
         },
       },
     });
 
-    return res.status(200).json({
-      playlists: resp,
-    });
+    return res
+      .status(200)
+      .json(resp ? { ...resp } : { playlists: [], subscriptions: [] });
   } catch (error) {
     return res.status(500);
   }

@@ -4,14 +4,18 @@ import {
 } from "@/components/icons/player";
 import Track from "@/components/Track";
 import useLibrary from "@/hooks/react-query/useLibrary";
+import { subscribeToPlaylist, unsubscribeFromPlaylist } from "@/lib/fetchers";
 import usePlayerStore from "@/store";
 import { TrackType } from "@/types";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   GetStaticPaths,
   GetStaticPropsContext,
   InferGetStaticPropsType,
 } from "next";
+import { useSession } from "next-auth/react";
 import { ParsedUrlQuery } from "querystring";
+import { Button } from "react-daisyui";
 import prisma from "../../lib/prismadb";
 
 export const getStaticPaths: GetStaticPaths = async () => {
@@ -36,6 +40,11 @@ export const getStaticProps = async (ctx: GetStaticPropsContext) => {
       id: true,
       title: true,
       duration: true,
+      user: {
+        select: {
+          email: true,
+        },
+      },
       tracks: {
         select: {
           track: {
@@ -65,14 +74,47 @@ export default function Playlist({
   title,
   duration,
   tracks,
+  user,
 }: InferGetStaticPropsType<typeof getStaticProps>) {
+  {
+    /* hooks and stuff */
+  }
+
   const { isPlaying, queue, setQueue, setIsPlaying } = usePlayerStore(
     (state) => state
   );
 
   const currentTrack = queue.instances[queue.index]?.track;
 
+  const queryClient = useQueryClient();
+
   const { data, isLoading: isLoadingQuery } = useLibrary();
+
+  const { mutate: subscribeMutation, isLoading: isSubscribeLoading } =
+    useMutation({
+      mutationFn: subscribeToPlaylist,
+      onSuccess: () => {
+        queryClient.invalidateQueries(["library"]);
+      },
+    });
+
+  const { mutate: unsubscribeMutation, isLoading: isUnsubscribeLoading } =
+    useMutation({
+      mutationFn: unsubscribeFromPlaylist,
+      onSuccess: () => {
+        queryClient.invalidateQueries(["library"]);
+      },
+    });
+
+  const session = useSession();
+  const isCurrentUserOwner = session.data?.user?.email === user?.email;
+  const isUserSubscribed = data?.subscriptions
+    .filter((sub) => sub.playlist.id === id)
+    .pop();
+
+  {
+    /* event handlers */
+  }
 
   const handleClick = (index: number, track: TrackType) => {
     if (currentTrack?.id === track.id && isPlaying) setIsPlaying(false);
@@ -83,6 +125,18 @@ export default function Playlist({
       setQueue(index, tracks);
       setIsPlaying(true);
     }
+  };
+
+  const handleSubscribe = () => {
+    if (id) subscribeMutation({ playlistId: id });
+  };
+
+  const handleUnsubscribe = () => {
+    const subscription = data?.subscriptions
+      .filter((sub) => sub.playlist.id === id)
+      .pop();
+
+    if (subscription) unsubscribeMutation({ subscriptionId: subscription.id });
   };
 
   return (
@@ -106,9 +160,29 @@ export default function Playlist({
             <p className="truncate">todo artist name</p>
           </div>
 
-          <div className="pb-2">
-            <h3 className="opacity-60 truncate">todo year</h3>
-          </div>
+          {!isCurrentUserOwner ? (
+            <div className="pb-2">
+              {isUserSubscribed ? (
+                <Button
+                  className="opacity-60 truncate"
+                  loading={isUnsubscribeLoading}
+                  disabled={isUnsubscribeLoading}
+                  onClick={handleUnsubscribe}
+                >
+                  unsubscribe
+                </Button>
+              ) : (
+                <Button
+                  className="opacity-60 truncate"
+                  loading={isSubscribeLoading}
+                  disabled={isSubscribeLoading}
+                  onClick={handleSubscribe}
+                >
+                  subscribe
+                </Button>
+              )}
+            </div>
+          ) : null}
 
           <div className="inline-flex pt-2 h-10 ">
             <button
