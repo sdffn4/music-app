@@ -14,9 +14,12 @@ import prisma from "../../lib/prismadb";
 import usePlayerStore from "@/store";
 
 import Track from "@/components/Track";
-import { FileInput } from "react-daisyui";
+import { FileInput, RadialProgress } from "react-daisyui";
 
 import * as musicMetadata from "music-metadata-browser";
+import { useState } from "react";
+import { CreateTrackApi } from "../api/create_track";
+import { CheckboxIcon } from "@/components/icons";
 
 export const getServerSideProps = async ({
   req,
@@ -55,9 +58,22 @@ export const getServerSideProps = async ({
   };
 };
 
+type UploadingTrack = {
+  [name: string]: {
+    title: string;
+    artist: string;
+    duration: number | undefined;
+    source: string | null;
+    isLoading: boolean;
+    progress: number;
+  };
+};
+
 export default function Uploads({
   tracks,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+  const [uploadingTracks, setUploadingTracks] = useState<UploadingTrack>({});
+
   const { isPlaying, queue, setQueue, setIsPlaying } = usePlayerStore(
     (state) => state
   );
@@ -93,6 +109,18 @@ export default function Uploads({
       }
 
       validFiles.push(file);
+
+      setUploadingTracks((previous) => ({
+        ...previous,
+        [file.name]: {
+          title: "",
+          artist: "",
+          duration: undefined,
+          source: null,
+          isLoading: true,
+          progress: 0,
+        },
+      }));
     }
 
     if (!validFiles) {
@@ -112,6 +140,7 @@ export default function Uploads({
 
       for (let i = 0; i < validFiles.length; i++) {
         const file = validFiles[i];
+        const fileName = file.name;
 
         const formData = new FormData();
 
@@ -122,24 +151,61 @@ export default function Uploads({
         formData.append("folder", "tracks");
 
         const { secure_url: source } = (
-          await axios.post<UploadApiResponse>(url, formData)
+          await axios.post<UploadApiResponse>(url, formData, {
+            onUploadProgress: (progressEvent) => {
+              setUploadingTracks((previous) => {
+                if (progressEvent.progress) {
+                  const progress = Math.round(progressEvent.progress * 100);
+
+                  if (progress !== previous[fileName].progress) {
+                    return {
+                      ...previous,
+                      [fileName]: {
+                        ...previous[fileName],
+                        progress: Math.round(progressEvent.progress * 100),
+                      },
+                    };
+                  }
+                }
+
+                return previous;
+              });
+            },
+          })
         ).data;
+
+        setUploadingTracks((previous) => ({
+          ...previous,
+          [fileName]: {
+            ...previous[fileName],
+            source,
+          },
+        }));
 
         const {
           common: { title, artist },
           format: { duration },
         } = await musicMetadata.parseBlob(file);
 
-        const track = (
-          await axios.post(`/api/create_track`, {
-            title,
-            artist,
-            source,
+        const { track } = (
+          await axios.post<CreateTrackApi>(`/api/create_track`, {
+            title: title ?? "unknown title",
+            artist: artist ?? "unknown artist",
             duration,
+            source,
           })
         ).data;
 
-        console.log(track);
+        setUploadingTracks((previous) => ({
+          ...previous,
+          [fileName]: {
+            ...previous[fileName],
+            title: track.title,
+            artist: track.artist,
+            duration: track.duration,
+            isLoading: false,
+          },
+        }));
       }
 
       e.target.type = "text";
@@ -160,6 +226,24 @@ export default function Uploads({
       </div>
 
       <div className="flex flex-col divide-y divide-white divide-opacity-10 mx-6">
+        {Object.entries(uploadingTracks).map((entry) => (
+          <div key={entry[0]} className="flex items-center py-2 px-1">
+            <RadialProgress
+              value={entry[1].progress}
+              size="1.75rem"
+              thickness="0.0875rem"
+            >
+              <p className="text-xs">
+                {entry[1].isLoading ? entry[1].progress : <CheckboxIcon />}
+              </p>
+            </RadialProgress>
+
+            <p className="truncate mx-2">
+              {entry[1].title ? entry[1].title : entry[0]}
+            </p>
+          </div>
+        ))}
+
         {tracks ? (
           tracks.map((track, index) => (
             <Track
