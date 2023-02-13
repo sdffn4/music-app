@@ -18,18 +18,18 @@ export default async function handler(
 
   if (!session) return res.status(403);
 
+  const cloud_name = process.env.cloud_name as string;
+  const api_key = process.env.api_key as string;
+
+  const api_secret = process.env.api_secret as string;
+
+  const timestamp = String(Math.round(new Date().getTime() / 1000));
+
   v2.config({
     api_key: process.env.api_key,
     api_secret: process.env.api_secret,
     cloud_name: process.env.cloud_name,
   });
-
-  const cloud_name = process.env.cloud_name;
-  const api_key = process.env.api_key;
-
-  const api_secret = process.env.api_secret;
-
-  const timestamp = String(Math.round(new Date().getTime() / 1000));
 
   const signature = v2.utils.api_sign_request(
     {
