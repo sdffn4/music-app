@@ -39,7 +39,7 @@ model Track {
   id              String              @id @default(uuid())
   title           String              @default("Not specified")
   artist          String              @default("Not specified")
-  duration        Int                 @default(0)
+  duration        Float               @default(0)
   source          String
   user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId          String
