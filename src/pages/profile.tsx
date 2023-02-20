@@ -1,44 +1,77 @@
-import { useSession, signIn, signOut } from "next-auth/react";
 import { useState } from "react";
 
-export default function Profile() {
-  const [email, setEmail] = useState<string>("");
-  const [notification, setNotification] = useState<boolean>(false);
-  const { data: session, status } = useSession();
+import {
+  useSession,
+  signIn as nextSignIn,
+  signOut as nextSignOut,
+} from "next-auth/react";
 
-  const handleSignIn = () => {
-    signIn("email", { email, redirect: false });
-    setNotification(true);
+import { Alert, Button, Input } from "react-daisyui";
+
+export default function Profile() {
+  const { data: session, status: sessionStatus } = useSession();
+
+  const [inputEmail, setInputEmail] = useState<string>("");
+  const [noticeUser, setNoticeUser] = useState<boolean>(false);
+
+  const signIn = () => {
+    nextSignIn("email", { email: inputEmail, redirect: false });
+    setNoticeUser(true);
   };
 
-  if (status === "loading") {
-    return <div>Loading...</div>;
-  } else if (status === "authenticated") {
+  const signOut = () => {
+    nextSignOut({ redirect: false });
+  };
+
+  if (sessionStatus === "loading") {
     return (
-      <div className="flex flex-col justify-center items-center h-full">
-        <p>{session.user?.name}</p>
-        <button onClick={() => signOut({ redirect: false })}>Sign out</button>
-      </div>
+      <div className="flex h-full justify-center items-center">Loading...</div>
     );
-  } else {
+  }
+
+  if (sessionStatus === "authenticated") {
     return (
-      <div className="flex flex-col justify-center items-center text-center h-full">
-        <input
-          className="bg-transparent outline-none text-center"
-          type="email"
-          placeholder="Email to sign up/in"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <button
-          className="border-2 border-white p-2"
-          disabled={!email}
-          onClick={handleSignIn}
-        >
-          Sign in
-        </button>
-        {notification ? <p>{`A message has been sent to ${email}`}</p> : null}
+      <div className="flex flex-col h-full justify-center items-center space-y-4">
+        <p>Username: {session.user?.name}</p>
+        <Button onClick={signOut}>Sign out</Button>
       </div>
     );
   }
+
+  return (
+    <div className="flex flex-col h-full justify-center items-center space-y-4">
+      <Input
+        type="email"
+        placeholder="Enter your email"
+        value={inputEmail}
+        onChange={(e) => setInputEmail(e.target.value)}
+      />
+
+      {noticeUser ? (
+        <Alert className="w-auto" icon={alertIcon}>
+          A message has been sent to your email.
+        </Alert>
+      ) : null}
+
+      <Button disabled={!inputEmail} onClick={signIn}>
+        Sign in / Sign up
+      </Button>
+    </div>
+  );
 }
+
+const alertIcon = (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    className="w-6 h-6 mx-2 stroke-current"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+    ></path>
+  </svg>
+);
