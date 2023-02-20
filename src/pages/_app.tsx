@@ -1,14 +1,17 @@
 import "@/styles/globals.css";
-import type { AppProps } from "next/app";
-import { SessionProvider } from "next-auth/react";
-import Layout from "@/components/Layout";
 import { useState } from "react";
+import { SessionProvider } from "next-auth/react";
+
+import type { AppProps } from "next/app";
+
 import {
   QueryClient,
   QueryClientProvider,
   Hydrate,
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+
+import Layout from "@/components/Layout";
 
 export default function App({
   Component,
