@@ -217,7 +217,11 @@ const SubscriptionDropdown: React.FC<SubscriptionDropdownProps> = ({
   children,
 }) => {
   return (
-    <Dropdown horizontal="left" vertical="middle">
+    <Dropdown
+      horizontal="left"
+      vertical="middle"
+      onClick={(e) => e.preventDefault()}
+    >
       <Dropdown.Toggle size="sm">
         <EllipsisIcon />
       </Dropdown.Toggle>
