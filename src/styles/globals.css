@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  .h-btm-nav {
+    height: 8rem;
+  }
+
+  .min-h-page {
+    min-height: calc(100vh - 8rem);
+  }
+}
