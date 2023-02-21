@@ -7,19 +7,21 @@ import type { UploadApiResponse } from "cloudinary";
 import type { AuthorizeUploadApi } from "../api/authorize_upload";
 
 import axios, { AxiosError } from "axios";
+import { CreateTrackApi } from "../api/create_track";
+
 import { unstable_getServerSession } from "next-auth";
 import { authOptions } from "../api/auth/[...nextauth]";
+import * as musicMetadata from "music-metadata-browser";
+
 import prisma from "../../lib/prismadb";
 
+import { useState } from "react";
 import usePlayerStore from "@/store";
 
 import Track from "@/components/Track";
-import { FileInput, RadialProgress } from "react-daisyui";
-
-import * as musicMetadata from "music-metadata-browser";
-import { useState } from "react";
-import { CreateTrackApi } from "../api/create_track";
+import { FileInput, Progress, RadialProgress } from "react-daisyui";
 import { CheckboxIcon } from "@/components/icons";
+import Image from "next/image";
 
 export const getServerSideProps = async ({
   req,
@@ -59,7 +61,6 @@ export const getServerSideProps = async ({
 };
 
 type UploadingTrack = {
-  fileName: string;
   title: string;
   artist: string;
   duration: number | undefined;
@@ -71,7 +72,9 @@ type UploadingTrack = {
 export default function Uploads({
   tracks,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  const [uploadingTracks, setUploadingTracks] = useState<UploadingTrack[]>([]);
+  const [uploadingTracks, setUploadingTracks] = useState<{
+    [name: string]: UploadingTrack;
+  }>({});
 
   const { isPlaying, queue, setQueue, setIsPlaying } = usePlayerStore(
     (state) => state
@@ -119,20 +122,17 @@ export default function Uploads({
 
       validFiles.push(file);
 
-      setUploadingTracks((previous) => {
-        return [
-          ...previous,
-          {
-            fileName: file.name,
-            title: "",
-            artist: "",
-            duration: undefined,
-            source: null,
-            isLoading: true,
-            progress: 0,
-          },
-        ];
-      });
+      setUploadingTracks((previous) => ({
+        ...previous,
+        [file.name]: {
+          title: "",
+          artist: "",
+          duration: undefined,
+          source: null,
+          isLoading: true,
+          progress: 0,
+        },
+      }));
     }
 
     if (!validFiles) {
@@ -161,18 +161,40 @@ export default function Uploads({
         formData.append("signature", signData.signature);
         formData.append("folder", "tracks");
 
-        const { secure_url: source } = (
-          await axios.post<UploadApiResponse>(url, formData, {
+        const {
+          common: { title, artist },
+          format: { duration },
+        } = await musicMetadata.parseBlob(file);
+
+        const trackMetadata = {
+          title: title ?? "unknown title",
+          artist: artist ?? "unknown artist",
+          duration: duration ?? 0,
+        };
+
+        setUploadingTracks((previous) => ({
+          ...previous,
+          [file.name]: {
+            ...previous[file.name],
+            ...trackMetadata,
+          },
+        }));
+
+        axios
+          .post<UploadApiResponse>(url, formData, {
             onUploadProgress: (progressEvent) => {
               setUploadingTracks((previous) => {
                 if (progressEvent.progress) {
                   const progress = Math.round(progressEvent.progress * 100);
 
-                  if (progress !== previous[i].progress) {
-                    previous[i].progress = Math.round(
-                      progressEvent.progress * 100
-                    );
-                    return [...previous];
+                  if (progress !== previous[file.name].progress) {
+                    return {
+                      ...previous,
+                      [file.name]: {
+                        ...previous[file.name],
+                        progress: Math.round(progressEvent.progress * 100),
+                      },
+                    };
                   }
                 }
 
@@ -180,35 +202,30 @@ export default function Uploads({
               });
             },
           })
-        ).data;
+          .then(({ data: { secure_url } }) => {
+            setUploadingTracks((previous) => ({
+              ...previous,
+              [file.name]: {
+                ...previous[file.name],
+                source: secure_url,
+              },
+            }));
 
-        setUploadingTracks((previous) => {
-          previous[i].source = source;
-          return [...previous];
-        });
-
-        const {
-          common: { title, artist },
-          format: { duration },
-        } = await musicMetadata.parseBlob(file);
-
-        const { track } = (
-          await axios.post<CreateTrackApi>(`/api/create_track`, {
-            title: title ?? "unknown title",
-            artist: artist ?? "unknown artist",
-            duration,
-            source,
-          })
-        ).data;
-
-        setUploadingTracks((previous) => {
-          previous[i].title = track.title;
-          previous[i].artist = track.artist;
-          previous[i].duration = track.duration;
-          previous[i].isLoading = false;
-
-          return [...previous];
-        });
+            axios
+              .post<CreateTrackApi>(`/api/create_track`, {
+                ...trackMetadata,
+                source: secure_url,
+              })
+              .then((_) => {
+                setUploadingTracks((previous) => ({
+                  ...previous,
+                  [file.name]: {
+                    ...previous[file.name],
+                    isLoading: false,
+                  },
+                }));
+              });
+          });
       }
 
       e.target.type = "text";
@@ -223,14 +240,14 @@ export default function Uploads({
   };
 
   return (
-    <>
-      <div className="text-center m-4">
+    <div className="min-h-page">
+      <div className="text-center py-2">
         <FileInput multiple onChange={uploadFiles} />
       </div>
 
       <div className="flex flex-col divide-y divide-white divide-opacity-10 mx-6">
-        {uploadingTracks.map((track, index) => (
-          <UploadingTrack key={index} track={track} />
+        {Object.entries(uploadingTracks).map(([fileName, track]) => (
+          <UploadingTrack key={fileName} fileName={fileName} track={track} />
         ))}
 
         {tracks ? (
@@ -247,30 +264,49 @@ export default function Uploads({
           <div>You have no uploaded tracks</div>
         )}
       </div>
-    </>
+    </div>
   );
 }
 
 interface UploadingTrackProps {
+  fileName: string;
   track: UploadingTrack;
 }
 
-const UploadingTrack: React.FC<UploadingTrackProps> = ({ track }) => {
+const UploadingTrack: React.FC<UploadingTrackProps> = ({ fileName, track }) => {
   return (
-    <div key={track.fileName} className="flex items-center py-2 px-1">
-      <RadialProgress
-        value={track.progress}
-        size="1.75rem"
-        thickness="0.0875rem"
-      >
-        <p className="text-xs">
-          {track.isLoading ? track.progress : <CheckboxIcon />}
-        </p>
-      </RadialProgress>
+    <div
+      key={fileName}
+      className="flex justify-between items-center h-20 m-2 w-full"
+    >
+      <div className="flex items-center">
+        <div className="relative w-20 h-20 border-black border-2">
+          <Image src="/vercel.svg" alt="cover" fill></Image>
+        </div>
 
-      <p className="truncate mx-2">
-        {track.title ? track.title : track.fileName}
-      </p>
+        <div className="flex flex-col px-4 space-y-1 text-sm">
+          <p>{track.title}</p>
+          <p>{track.artist}</p>
+          <p>{fileName}</p>
+        </div>
+      </div>
+
+      <RadialProgress
+        className="mx-4"
+        value={track.progress}
+        size="3rem"
+        thickness="2px"
+      >
+        {track.isLoading ? (
+          track.progress === 100 ? (
+            "99%"
+          ) : (
+            `${track.progress}%`
+          )
+        ) : (
+          <CheckboxIcon />
+        )}
+      </RadialProgress>
     </div>
   );
 };
