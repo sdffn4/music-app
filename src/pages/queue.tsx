@@ -24,14 +24,14 @@ export default function Queue() {
 
   if (queue.instances.length === 0) {
     return (
-      <div className="flex flex-col h-full justify-center items-center">
+      <div className="min-h-page flex flex-col h-full justify-center items-center">
         Queue is empty
       </div>
     );
   }
 
   return (
-    <div className="mx-4">
+    <div className="min-h-page mx-4">
       {queue.instances.map((instance, index) => {
         const currentInstance = queue.instances[queue.index];
         const isActive = instance.id === currentInstance.id && isPlaying;

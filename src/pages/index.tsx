@@ -1,5 +1,7 @@
 export default function Index() {
   return (
-    <div className="flex justify-center items-center h-full">Index Page</div>
+    <div className="min-h-page flex justify-center items-center">
+      Index Page
+    </div>
   );
 }
