@@ -1,5 +1,5 @@
 import { addTrackToPlaylist } from "@/lib/fetchers";
-import { GetTrackPlaylistPresenseApiResponse } from "@/types/api";
+import { LibraryApiResponse } from "@/types/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const useAddTrack = () => {
@@ -7,46 +7,38 @@ const useAddTrack = () => {
 
   return useMutation({
     mutationFn: addTrackToPlaylist,
-    onMutate: (variables) => {
-      const queryData =
-        queryClient.getQueryData<GetTrackPlaylistPresenseApiResponse>([
-          "presense",
-        ]);
+    onMutate: async ({ playlistId, trackId }) => {
+      await queryClient.cancelQueries({ queryKey: ["library"] });
 
-      queryClient.setQueryData<GetTrackPlaylistPresenseApiResponse>(
-        ["presense"],
-        (previous) => {
-          if (previous && queryData) {
-            const playlist = previous.playlists
-              .filter((el) => el.id === variables.playlistId)
-              .pop();
+      const previousLibrary = queryClient.getQueryData<LibraryApiResponse>([
+        "library",
+      ]);
 
-            const filteredPlaylists = previous.playlists.filter(
-              (el) => el.id !== variables.playlistId
-            );
+      queryClient.setQueryData<LibraryApiResponse>(["library"], (old) => {
+        if (old) {
+          const playlist = old.playlists
+            .filter((el) => el.id === playlistId)
+            .pop();
 
-            if (playlist) {
-              return {
-                playlists: [
-                  ...filteredPlaylists,
-                  {
-                    id: playlist.id,
-                    title: playlist.title,
-                    tracks: [...playlist.tracks, variables.trackId],
-                  },
-                ],
-              };
-            }
+          if (playlist) {
+            playlist.tracks.push(trackId);
+            return { ...old };
           }
-
-          return previous;
         }
-      );
 
-      return { queryData };
+        return old;
+      });
+
+      return { previousLibrary };
     },
-    onSuccess() {
-      queryClient.invalidateQueries(["presense"]);
+    onError: (_, __, context) => {
+      queryClient.setQueryData<LibraryApiResponse>(
+        ["library"],
+        context?.previousLibrary
+      );
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["library"] });
     },
   });
 };

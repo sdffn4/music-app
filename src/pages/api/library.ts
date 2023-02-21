@@ -24,6 +24,11 @@ export default async function handler(
           select: {
             id: true,
             title: true,
+            tracks: {
+              select: {
+                trackId: true,
+              },
+            },
           },
         },
         subscriptions: {
@@ -40,9 +45,21 @@ export default async function handler(
       },
     });
 
-    return res
-      .status(200)
-      .json(resp ? { ...resp } : { playlists: [], subscriptions: [] });
+    return res.status(200).json(
+      resp
+        ? {
+            subscriptions: [...resp.subscriptions],
+            playlists: resp.playlists.map((playlist) => ({
+              id: playlist.id,
+              title: playlist.title,
+              tracks: playlist.tracks.map((track) => track.trackId),
+            })),
+          }
+        : {
+            subscriptions: [],
+            playlists: [],
+          }
+    );
   } catch (error) {
     return res.status(500);
   }

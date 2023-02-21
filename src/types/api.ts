@@ -1,25 +1,31 @@
-import { PlaylistType } from ".";
+export interface LibraryApiResponse {
+  playlists: {
+    id: string;
+    title: string;
+    tracks: Array<string>;
+  }[];
+  subscriptions: {
+    id: string;
+    playlist: {
+      id: string;
+      title: string;
+    };
+  }[];
+}
 
-interface Playlist {
+export interface CreatePlaylistApiResponse {
   id: string;
   title: string;
 }
-
-export type LibraryApiResponse = {
-  playlists: Array<Playlist>;
-  subscriptions: Array<{ id: string; playlist: Playlist }>;
-};
-
-export type CreatePlaylistApiResponse = PlaylistType;
 
 export interface RemovePlaylistApiResponse {
   id: string;
 }
 
 export interface GetTrackPlaylistPresenseApiResponse {
-  playlists: Array<{
+  playlists: {
     tracks: Array<string>;
     id: string;
     title: string;
-  }>;
+  }[];
 }
