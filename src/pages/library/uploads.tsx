@@ -59,20 +59,19 @@ export const getServerSideProps = async ({
 };
 
 type UploadingTrack = {
-  [name: string]: {
-    title: string;
-    artist: string;
-    duration: number | undefined;
-    source: string | null;
-    isLoading: boolean;
-    progress: number;
-  };
+  fileName: string;
+  title: string;
+  artist: string;
+  duration: number | undefined;
+  source: string | null;
+  isLoading: boolean;
+  progress: number;
 };
 
 export default function Uploads({
   tracks,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  const [uploadingTracks, setUploadingTracks] = useState<UploadingTrack>({});
+  const [uploadingTracks, setUploadingTracks] = useState<UploadingTrack[]>([]);
 
   const { isPlaying, queue, setQueue, setIsPlaying } = usePlayerStore(
     (state) => state
@@ -81,11 +80,21 @@ export default function Uploads({
   const currentTrack = queue.instances[queue.index]?.track;
 
   const play = (index: number, track: TrackType) => {
-    if (currentTrack?.id === track.id && isPlaying) setIsPlaying(false);
+    const clickedOnCurrentPlayingTrack =
+      currentTrack?.id === track.id && isPlaying;
+    const clickedOnCurrentNotPlayingTrack =
+      currentTrack?.id === track.id && !isPlaying;
+    const clickedOnNotCurrentTrack = currentTrack?.id !== track.id;
 
-    if (currentTrack?.id === track.id && !isPlaying) setIsPlaying(true);
+    if (clickedOnCurrentPlayingTrack) {
+      setIsPlaying(false);
+    }
 
-    if (currentTrack?.id !== track.id) {
+    if (clickedOnCurrentNotPlayingTrack) {
+      setIsPlaying(true);
+    }
+
+    if (clickedOnNotCurrentTrack) {
       setQueue(index, tracks);
       setIsPlaying(true);
     }
@@ -110,17 +119,20 @@ export default function Uploads({
 
       validFiles.push(file);
 
-      setUploadingTracks((previous) => ({
-        ...previous,
-        [file.name]: {
-          title: "",
-          artist: "",
-          duration: undefined,
-          source: null,
-          isLoading: true,
-          progress: 0,
-        },
-      }));
+      setUploadingTracks((previous) => {
+        return [
+          ...previous,
+          {
+            fileName: file.name,
+            title: "",
+            artist: "",
+            duration: undefined,
+            source: null,
+            isLoading: true,
+            progress: 0,
+          },
+        ];
+      });
     }
 
     if (!validFiles) {
@@ -140,7 +152,6 @@ export default function Uploads({
 
       for (let i = 0; i < validFiles.length; i++) {
         const file = validFiles[i];
-        const fileName = file.name;
 
         const formData = new FormData();
 
@@ -157,14 +168,11 @@ export default function Uploads({
                 if (progressEvent.progress) {
                   const progress = Math.round(progressEvent.progress * 100);
 
-                  if (progress !== previous[fileName].progress) {
-                    return {
-                      ...previous,
-                      [fileName]: {
-                        ...previous[fileName],
-                        progress: Math.round(progressEvent.progress * 100),
-                      },
-                    };
+                  if (progress !== previous[i].progress) {
+                    previous[i].progress = Math.round(
+                      progressEvent.progress * 100
+                    );
+                    return [...previous];
                   }
                 }
 
@@ -174,13 +182,10 @@ export default function Uploads({
           })
         ).data;
 
-        setUploadingTracks((previous) => ({
-          ...previous,
-          [fileName]: {
-            ...previous[fileName],
-            source,
-          },
-        }));
+        setUploadingTracks((previous) => {
+          previous[i].source = source;
+          return [...previous];
+        });
 
         const {
           common: { title, artist },
@@ -196,16 +201,14 @@ export default function Uploads({
           })
         ).data;
 
-        setUploadingTracks((previous) => ({
-          ...previous,
-          [fileName]: {
-            ...previous[fileName],
-            title: track.title,
-            artist: track.artist,
-            duration: track.duration,
-            isLoading: false,
-          },
-        }));
+        setUploadingTracks((previous) => {
+          previous[i].title = track.title;
+          previous[i].artist = track.artist;
+          previous[i].duration = track.duration;
+          previous[i].isLoading = false;
+
+          return [...previous];
+        });
       }
 
       e.target.type = "text";
@@ -226,22 +229,8 @@ export default function Uploads({
       </div>
 
       <div className="flex flex-col divide-y divide-white divide-opacity-10 mx-6">
-        {Object.entries(uploadingTracks).map((entry) => (
-          <div key={entry[0]} className="flex items-center py-2 px-1">
-            <RadialProgress
-              value={entry[1].progress}
-              size="1.75rem"
-              thickness="0.0875rem"
-            >
-              <p className="text-xs">
-                {entry[1].isLoading ? entry[1].progress : <CheckboxIcon />}
-              </p>
-            </RadialProgress>
-
-            <p className="truncate mx-2">
-              {entry[1].title ? entry[1].title : entry[0]}
-            </p>
-          </div>
+        {uploadingTracks.map((track, index) => (
+          <UploadingTrack key={index} track={track} />
         ))}
 
         {tracks ? (
@@ -261,3 +250,27 @@ export default function Uploads({
     </>
   );
 }
+
+interface UploadingTrackProps {
+  track: UploadingTrack;
+}
+
+const UploadingTrack: React.FC<UploadingTrackProps> = ({ track }) => {
+  return (
+    <div key={track.fileName} className="flex items-center py-2 px-1">
+      <RadialProgress
+        value={track.progress}
+        size="1.75rem"
+        thickness="0.0875rem"
+      >
+        <p className="text-xs">
+          {track.isLoading ? track.progress : <CheckboxIcon />}
+        </p>
+      </RadialProgress>
+
+      <p className="truncate mx-2">
+        {track.title ? track.title : track.fileName}
+      </p>
+    </div>
+  );
+};
