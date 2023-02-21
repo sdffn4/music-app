@@ -9,10 +9,7 @@ export const fetchLibrary = async () => {
   return (await axios.get<LibraryApiResponse>(`/api/library`)).data;
 };
 
-export const createPlaylist = async (args: {
-  title: string;
-  description: string;
-}) => {
+export const createPlaylist = async (args: { id: string; title: string }) => {
   return (
     await axios.post<CreatePlaylistApiResponse>(`/api/playlist/create`, args)
   ).data;
@@ -36,7 +33,11 @@ export const removeTrackFromPlaylist = async (args: {
   return await axios.post(`/api/track/remove`, args);
 };
 
-export const subscribeToPlaylist = async (args: { playlistId: string }) => {
+export const subscribeToPlaylist = async (args: {
+  id: string;
+  playlistId: string;
+  title: string;
+}) => {
   return await axios.post(`/api/playlist/subscribe`, args);
 };
 
