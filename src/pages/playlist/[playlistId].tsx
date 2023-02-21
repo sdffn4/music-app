@@ -163,7 +163,7 @@ export default function Playlist({
         }
       />
 
-      <div>
+      <div className="divide-y divide-neutral divide-opacity-10">
         {tracks && tracks.length > 0 ? (
           tracks.map((track, index) => {
             const isActive = track.id === currentTrack?.id && isPlaying;
