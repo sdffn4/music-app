@@ -3,18 +3,22 @@ import useLibrary from "@/hooks/react-query/useLibrary";
 import useRemoveTrack from "@/hooks/react-query/useRemoveTrack";
 import usePlayerStore from "@/store";
 import { TrackType } from "@/types";
+import { useRouter } from "next/router";
 import { Alert, Button, Checkbox, Dropdown } from "react-daisyui";
 
 interface TrackDropdownProps {
+  index: number;
   track: TrackType;
 }
 
-const TrackDropdown: React.FC<TrackDropdownProps> = ({ track }) => {
-  const { data: library } = useLibrary();
-  const { mutate: mutateAdd, isLoading: isAddLoading } = useAddTrack();
-  const { mutate: mutateRemove, isLoading: isRemoveLoading } = useRemoveTrack();
+const TrackDropdown: React.FC<TrackDropdownProps> = ({ index, track }) => {
+  const { pathname } = useRouter();
 
-  const { addToQueue } = usePlayerStore((state) => state);
+  const { addToQueue, removeFromQueue } = usePlayerStore((state) => state);
+
+  const { data: library } = useLibrary();
+  const { mutate: mutateAdd } = useAddTrack();
+  const { mutate: mutateRemove } = useRemoveTrack();
 
   const addToPlaylist = (playlistId: string) => {
     mutateAdd({ playlistId, trackId: track.id });
@@ -26,10 +30,20 @@ const TrackDropdown: React.FC<TrackDropdownProps> = ({ track }) => {
 
   return (
     <div className="divide-y divide-neutral space-y-2">
-      <div className="flex justify-center items-center">
+      <div className="flex flex-col justify-center items-center space-y-2">
         <Button className="w-full" size="xs" onClick={() => addToQueue(track)}>
           Add to queue
         </Button>
+
+        {pathname === "/queue" ? (
+          <Button
+            className="w-full"
+            size="xs"
+            onClick={() => removeFromQueue(index)}
+          >
+            Remove from queue
+          </Button>
+        ) : null}
       </div>
 
       <div className="flex flex-col justify-center items-center space-y-2 pt-2 pb-2">
