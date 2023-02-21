@@ -89,7 +89,7 @@ const BottomNavigation: React.FC = () => {
   const { pathname } = useRouter();
 
   return (
-    <div className="h-btm-nav flex flex-col sticky bottom-0 bg-base-100 bg-opacity-70 backdrop-blur-lg divide-y-2 divide-white divide-opacity-10">
+    <div className="h-btm-nav flex flex-col sticky bottom-0 bg-base-100 bg-opacity-70 backdrop-blur-lg divide-y divide-neutral divide-opacity-10">
       <div className="flex basis-1/2 justify-between">
         <Player />
       </div>
@@ -171,11 +171,11 @@ const Player: React.FC = () => {
           </Button>
 
           {isPlaying ? (
-            <Button size="sm" onClick={pause}>
+            <Button size="sm" disabled={!currentTrack} onClick={pause}>
               <PauseIcon />
             </Button>
           ) : (
-            <Button size="sm" onClick={play}>
+            <Button size="sm" disabled={!currentTrack} onClick={play}>
               <PlayIcon />
             </Button>
           )}
