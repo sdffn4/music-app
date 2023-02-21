@@ -6,8 +6,8 @@ import { authOptions } from "../auth/[...nextauth]";
 
 interface Request extends NextApiRequest {
   body: {
+    id: string;
     title: string;
-    description: string;
   };
 }
 
@@ -22,10 +22,11 @@ export default async function handler(
   if (!session) return res.status(403);
 
   try {
-    const { title, description } = req.body;
+    const { id, title } = req.body;
 
     const resp = await prisma.playlist.create({
       data: {
+        id,
         title,
         user: {
           connect: {

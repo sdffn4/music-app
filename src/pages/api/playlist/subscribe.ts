@@ -14,10 +14,11 @@ export default async function handler(
   if (!session) return res.status(403);
 
   try {
-    const { playlistId } = req.body;
+    const { id, playlistId } = req.body;
 
     const resp = await prisma.subscription.create({
       data: {
+        id,
         playlist: {
           connect: {
             id: playlistId,
