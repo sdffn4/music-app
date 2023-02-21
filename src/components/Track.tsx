@@ -17,7 +17,7 @@ const Track: React.FC<TrackProps> = ({ index, track, isActive, onClick }) => {
     <div className="flex justify-between items-center mx-4">
       <div className="flex py-2 space-x-2">
         <p className="text-center self-center text-xs opacity-60 w-10 truncate">
-          {index}
+          {index + 1}
         </p>
 
         <p
@@ -30,13 +30,13 @@ const Track: React.FC<TrackProps> = ({ index, track, isActive, onClick }) => {
         </p>
       </div>
 
-      <Dropdown horizontal="left" vertical="middle">
+      <Dropdown horizontal="left" vertical="middle" hover>
         <Dropdown.Toggle size="xs">
           <EllipsisIcon />
         </Dropdown.Toggle>
 
         <Dropdown.Menu className="w-52 m-1">
-          <TrackDropdown track={track} />
+          <TrackDropdown index={index} track={track} />
         </Dropdown.Menu>
       </Dropdown>
     </div>

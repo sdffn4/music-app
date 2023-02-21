@@ -255,7 +255,7 @@ export default function Uploads({
             <Track
               key={track.id}
               track={track}
-              index={index + 1}
+              index={index}
               onClick={() => play(index, track)}
               isActive={track.id === currentTrack?.id && isPlaying}
             />

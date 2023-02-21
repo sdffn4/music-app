@@ -39,7 +39,7 @@ export default function Queue() {
         return (
           <Track
             key={instance.id}
-            index={index + 1}
+            index={index}
             isActive={isActive}
             track={instance.track}
             onClick={() => play(index)}

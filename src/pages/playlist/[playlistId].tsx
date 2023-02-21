@@ -171,7 +171,7 @@ export default function Playlist({
             return (
               <Track
                 key={track.id}
-                index={index + 1}
+                index={index}
                 isActive={isActive}
                 track={track}
                 onClick={() => play(track, index)}
