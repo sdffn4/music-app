@@ -8,12 +8,14 @@ import prisma from "../../../lib/prismadb";
 export interface CreatePlaylistApi {
   id: string;
   title: string;
+  cover: string;
 }
 
 interface Request extends NextApiRequest {
   body: {
     id: string;
     title: string;
+    cover: string;
   };
 }
 
@@ -28,12 +30,13 @@ export default async function handler(
   if (!session) return res.status(403);
 
   try {
-    const { id, title } = req.body;
+    const { id, title, cover } = req.body;
 
     const resp = await prisma.playlist.create({
       data: {
         id,
         title,
+        cover,
         user: {
           connect: {
             email: session.user?.email as string | undefined,
@@ -45,6 +48,7 @@ export default async function handler(
     return res.status(200).json({
       id: resp.id,
       title: resp.title,
+      cover: resp.cover,
     });
   } catch (error) {
     return res.status(500);
