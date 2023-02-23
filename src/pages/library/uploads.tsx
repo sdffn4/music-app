@@ -145,7 +145,9 @@ export default function Uploads({
 
     try {
       const signData = (
-        await axios.get<AuthorizeUploadApi>(`/api/authorize_upload`)
+        await axios.post<AuthorizeUploadApi>(`/api/authorize_upload`, {
+          folder: "tracks",
+        })
       ).data;
 
       const url = `https://api.cloudinary.com/v1_1/${signData.cloud_name}/auto/upload`;
