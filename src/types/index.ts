@@ -4,8 +4,3 @@ export type TrackType = {
   artist: string;
   source: string;
 };
-
-export type PlaylistType = {
-  id: string;
-  title: string;
-};

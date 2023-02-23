@@ -1,31 +1,38 @@
-import type { CreatePlaylistApiResponse } from "@/types/api";
 import type { NextApiRequest, NextApiResponse } from "next";
-import { unstable_getServerSession } from "next-auth";
-import prisma from "../../../lib/prismadb";
+
+import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]";
+
+import prisma from "../../../lib/prismadb";
+
+export interface CreatePlaylistApi {
+  id: string;
+  title: string;
+}
 
 interface Request extends NextApiRequest {
   body: {
+    id: string;
     title: string;
-    description: string;
   };
 }
 
 export default async function handler(
   req: Request,
-  res: NextApiResponse<CreatePlaylistApiResponse>
+  res: NextApiResponse<CreatePlaylistApi>
 ) {
   if (req.method !== "POST") return res.status(405);
 
-  const session = await unstable_getServerSession(req, res, authOptions);
+  const session = await getServerSession(req, res, authOptions);
 
   if (!session) return res.status(403);
 
   try {
-    const { title, description } = req.body;
+    const { id, title } = req.body;
 
     const resp = await prisma.playlist.create({
       data: {
+        id,
         title,
         user: {
           connect: {

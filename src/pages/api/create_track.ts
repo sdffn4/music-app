@@ -1,6 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { unstable_getServerSession } from "next-auth";
+
+import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
+
 import prisma from "../../lib/prismadb";
 
 export type CreateTrackApi = {
@@ -26,7 +28,7 @@ export default async function handler(
   req: Request,
   res: NextApiResponse<CreateTrackApi>
 ) {
-  const session = await unstable_getServerSession(req, res, authOptions);
+  const session = await getServerSession(req, res, authOptions);
   if (!session) return res.status(401);
 
   const { title, artist, source, duration } = req.body;

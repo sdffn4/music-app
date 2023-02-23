@@ -1,164 +1,232 @@
-import { useSession } from "next-auth/react";
-import ListItem from "../../components/ListItem";
-import { createPlaylist, removePlaylist } from "@/lib/fetchers";
+import Link from "next/link";
 import { useState } from "react";
-import { Button, Dropdown, Modal } from "react-daisyui";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { EllipsisIcon } from "@/components/icons";
-import { useRouter } from "next/router";
+import { useSession } from "next-auth/react";
+
 import useLibrary from "@/hooks/react-query/useLibrary";
+import useCreatePlaylist from "@/hooks/react-query/useCreatePlaylist";
+import useDeletePlaylist from "@/hooks/react-query/useDeletePlaylist";
+import useUnsubscribe from "@/hooks/react-query/useUnsubscribe";
+
+import { EllipsisIcon } from "@/components/icons";
+import { Button, Dropdown, Input, Modal } from "react-daisyui";
+
+import { v4 as uuidv4 } from "uuid";
 
 export default function Library() {
-  const router = useRouter();
+  const session = useSession();
+
+  const { data: library } = useLibrary();
+
+  const { mutate: mutateCreation, isLoading: isCreationLoading } =
+    useCreatePlaylist();
+
+  const { mutate: mutateDeletion, isLoading: isDeletionLoading } =
+    useDeletePlaylist();
+
+  const { mutate: mutateUnsubscription, isLoading: isUnsubscriptionLoading } =
+    useUnsubscribe();
+
+  const createPlaylist = () => {
+    toggleVisible();
+    setTitle("");
+
+    const id = uuidv4();
+    mutateCreation({ id, title });
+  };
+
+  const deletePlaylist = (playlistId: string) => {
+    mutateDeletion({ playlistId });
+  };
+
+  const unsubscribe = (subscriptionId: string) => {
+    mutateUnsubscription({ subscriptionId });
+  };
 
   const [title, setTitle] = useState<string>("");
-  const [description, setDescription] = useState<string>("");
 
   const [visible, setVisible] = useState<boolean>(false);
-
-  const queryClient = useQueryClient();
-
-  const { data: session } = useSession();
-
-  const { data, isLoading: isLoadingQuery } = useLibrary();
-
-  const { isLoading: isLoadingCreation, mutate: mutateCreation } = useMutation({
-    mutationFn: createPlaylist,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["library"] });
-      setTitle("");
-      setDescription("");
-      setVisible(false);
-    },
-  });
-
-  const { isLoading: isLoadingRemove, mutate: mutateRemove } = useMutation({
-    mutationFn: removePlaylist,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["library"] }),
-  });
+  const toggleVisible = () => setVisible((previous) => !previous);
 
   if (!session) {
-    return <div>You have to sign in to be able to manage your library.</div>;
+    return (
+      <div className="flex justify-center items-center h-full">
+        You have to sign in to be able to manage your library.
+      </div>
+    );
   }
 
-  const toggleVisible = () => setVisible((prev) => !prev);
-
-  const handleCreate = () => {
-    mutateCreation({ title, description });
-  };
-
-  const handleRemove = (playlistId: string) => {
-    mutateRemove({ playlistId });
-  };
-
   return (
-    <div>
-      <ListItem text="Uploads" to="/library/uploads" />
+    <div className="min-h-page">
+      <Link href="/library/uploads">
+        <div className="flex justify-between items-center p-4 hover:bg-primary-focus hover:cursor-pointer">
+          <div>Your uploads</div>
+          <UploadsDropdown>
+            <Dropdown.Item>There is nothing in here yet</Dropdown.Item>
+          </UploadsDropdown>
+        </div>
+      </Link>
 
-      <div className="m-4 font-sans flex">
-        <h3>Playlists</h3>
-        <Button size="xs" onClick={toggleVisible}>
-          +
-        </Button>
+      <div className="flex flex-col">
+        <div className="flex items-center">
+          <h2 className="px-4 py-2 font-semibold">Your playlists</h2>
+          <Button size="sm" onClick={toggleVisible}>
+            Create
+          </Button>
 
-        <Modal open={visible} onClickBackdrop={toggleVisible}>
-          <Modal.Header className="font-bold">
-            Create a new playlist
-          </Modal.Header>
-
-          <Modal.Body>
-            <div className="form-control w-full max-w-xs">
-              <label className="label">
-                <span className="label-text">What is the title?</span>
-              </label>
-              <input
-                type="text"
-                placeholder="Type here"
-                className="input input-bordered w-full max-w-xs"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-              <label className="label">
-                <span className="label-text">Playlist description</span>
-              </label>
-              <textarea
-                className="textarea textarea-bordered h-24"
-                placeholder="Description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              ></textarea>
-              <div className="m-4 flex justify-around">
-                <Button onClick={toggleVisible}>cancel</Button>
-                <Button
-                  onClick={handleCreate}
-                  disabled={!title || isLoadingCreation}
-                  loading={isLoadingCreation}
-                >
-                  create
-                </Button>
+          <Modal open={visible} onClickBackdrop={toggleVisible}>
+            <Modal.Body>
+              <div className="form-control w-full max-w-xs">
+                <label className="label px-2">
+                  <span className="label-text">
+                    {"What's the playlist title?"}
+                  </span>
+                </label>
+                <Input
+                  placeholder="Title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
               </div>
+            </Modal.Body>
+
+            <Modal.Actions>
+              <Button
+                color="success"
+                onClick={createPlaylist}
+                loading={isCreationLoading}
+                disabled={!title || isCreationLoading}
+              >
+                Create
+              </Button>
+              <Button onClick={toggleVisible} disabled={isCreationLoading}>
+                Cancel
+              </Button>
+            </Modal.Actions>
+          </Modal>
+        </div>
+
+        <div>
+          {library && library.playlists.length > 0 ? (
+            library.playlists.map((playlist) => (
+              <Link href={`/playlist/${playlist.id}`} key={playlist.id}>
+                <div className="flex justify-between items-center p-4 hover:bg-primary-focus hover:cursor-pointer">
+                  <div>{playlist.title}</div>
+                  <PlaylistDropdown>
+                    <Button
+                      className="hover:text-warning"
+                      disabled={isDeletionLoading}
+                      loading={isDeletionLoading}
+                      onClick={() => deletePlaylist(playlist.id)}
+                    >
+                      Delete
+                    </Button>
+                  </PlaylistDropdown>
+                </div>
+              </Link>
+            ))
+          ) : (
+            <div className="m-4 text-center">
+              You have no playlists. Use the button above to create one.
             </div>
-          </Modal.Body>
-        </Modal>
+          )}
+        </div>
       </div>
 
-      <div>
-        {isLoadingQuery ? (
-          <div>Loading...</div>
-        ) : (
-          data?.playlists.map((playlist) => (
-            <div
-              key={playlist.id}
-              onClick={() => router.push(`/playlist/${playlist.id}`)}
-              className="flex justify-between items-center hover:bg-white hover:bg-opacity-30 hover:cursor-pointer p-4"
-            >
-              <p className="truncate">{playlist.title}</p>
-              <Dropdown
-                hover
-                horizontal="left"
-                onClick={(e) => e.stopPropagation()}
+      <div className="flex flex-col">
+        <h2 className="px-4 py-2 font-semibold">Your subscriptions</h2>
+
+        <div>
+          {library && library.subscriptions.length > 0 ? (
+            library.subscriptions.map((subscription) => (
+              <Link
+                key={subscription.id}
+                href={`/playlist/${subscription.playlist.id}`}
               >
-                <Dropdown.Toggle className="px-2">
-                  <EllipsisIcon />
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                  <Button
-                    className="p-4 w-max h-full"
-                    size="xs"
-                    onClick={() => handleRemove(playlist.id)}
-                    loading={isLoadingRemove}
-                    disabled={isLoadingRemove}
-                  >
-                    Remove
-                  </Button>
-                </Dropdown.Menu>
-              </Dropdown>
+                <div className="flex justify-between items-center p-4 hover:bg-primary-focus hover:cursor-pointer">
+                  <div>{subscription.playlist.title}</div>
+                  <SubscriptionDropdown>
+                    <Button
+                      className="hover:text-warning"
+                      onClick={() => unsubscribe(subscription.id)}
+                      disabled={isUnsubscriptionLoading}
+                      loading={isUnsubscriptionLoading}
+                    >
+                      Unsubscribe
+                    </Button>
+                  </SubscriptionDropdown>
+                </div>
+              </Link>
+            ))
+          ) : (
+            <div className="m-4 text-center">
+              You have no subscriptions. Use <Link href="/search">search</Link>{" "}
+              to find any.
             </div>
-          ))
-        )}
-      </div>
-
-      <div className="m-4">
-        <h3>Subscriptions</h3>
-
-        {isLoadingQuery ? (
-          <div>Loading...</div>
-        ) : data && data.subscriptions.length > 0 ? (
-          data?.subscriptions.map((sub) => {
-            return (
-              <div
-                key={sub.id}
-                className="flex justify-between items-center hover:bg-white hover:bg-opacity-30 hover:cursor-pointer p-4"
-                onClick={() => router.push(`/playlist/${sub.playlist.id}`)}
-              >
-                <p className="truncate">{sub.playlist.title}</p>
-              </div>
-            );
-          })
-        ) : (
-          <div>You have no subscriptions</div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
 }
+
+interface UploadsDropdownProps {
+  children: React.ReactNode;
+}
+
+const UploadsDropdown: React.FC<UploadsDropdownProps> = ({ children }) => {
+  return (
+    <Dropdown
+      horizontal="left"
+      vertical="middle"
+      onClick={(e) => e.preventDefault()}
+    >
+      <Dropdown.Toggle size="sm">
+        <EllipsisIcon />
+      </Dropdown.Toggle>
+
+      <Dropdown.Menu className="w-64 m-1">{children}</Dropdown.Menu>
+    </Dropdown>
+  );
+};
+
+interface PlaylistDropdownProps {
+  children: React.ReactNode;
+}
+
+const PlaylistDropdown: React.FC<PlaylistDropdownProps> = ({ children }) => {
+  return (
+    <Dropdown
+      horizontal="left"
+      vertical="middle"
+      onClick={(e) => e.preventDefault()}
+    >
+      <Dropdown.Toggle size="sm">
+        <EllipsisIcon />
+      </Dropdown.Toggle>
+
+      <Dropdown.Menu className="w-64 m-1">{children}</Dropdown.Menu>
+    </Dropdown>
+  );
+};
+
+interface SubscriptionDropdownProps {
+  children: React.ReactNode;
+}
+
+const SubscriptionDropdown: React.FC<SubscriptionDropdownProps> = ({
+  children,
+}) => {
+  return (
+    <Dropdown
+      horizontal="left"
+      vertical="middle"
+      onClick={(e) => e.preventDefault()}
+    >
+      <Dropdown.Toggle size="sm">
+        <EllipsisIcon />
+      </Dropdown.Toggle>
+
+      <Dropdown.Menu className="w-64 m-1">{children}</Dropdown.Menu>
+    </Dropdown>
+  );
+};

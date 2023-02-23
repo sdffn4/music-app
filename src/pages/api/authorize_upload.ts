@@ -1,7 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { v2 } from "cloudinary";
-import { unstable_getServerSession } from "next-auth";
+
+import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
+
+import { v2 } from "cloudinary";
 
 export type AuthorizeUploadApi = {
   timestamp: string;
@@ -14,7 +16,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<AuthorizeUploadApi>
 ) {
-  const session = await unstable_getServerSession(req, res, authOptions);
+  const session = await getServerSession(req, res, authOptions);
 
   if (!session) return res.status(403);
 

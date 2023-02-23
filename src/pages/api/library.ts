@@ -1,16 +1,32 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { unstable_getServerSession } from "next-auth";
+
+import { getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
+
 import prisma from "../../lib/prismadb";
-import type { LibraryApiResponse } from "@/types/api";
+
+export interface LibraryApi {
+  playlists: {
+    id: string;
+    title: string;
+    tracks: Array<string>;
+  }[];
+  subscriptions: {
+    id: string;
+    playlist: {
+      id: string;
+      title: string;
+    };
+  }[];
+}
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<LibraryApiResponse>
+  res: NextApiResponse<LibraryApi>
 ) {
   if (req.method !== "GET") return res.status(405);
 
-  const session = await unstable_getServerSession(req, res, authOptions);
+  const session = await getServerSession(req, res, authOptions);
 
   if (!session) return res.status(403);
 
@@ -24,6 +40,11 @@ export default async function handler(
           select: {
             id: true,
             title: true,
+            tracks: {
+              select: {
+                trackId: true,
+              },
+            },
           },
         },
         subscriptions: {
@@ -40,9 +61,21 @@ export default async function handler(
       },
     });
 
-    return res
-      .status(200)
-      .json(resp ? { ...resp } : { playlists: [], subscriptions: [] });
+    return res.status(200).json(
+      resp
+        ? {
+            subscriptions: [...resp.subscriptions],
+            playlists: resp.playlists.map((playlist) => ({
+              id: playlist.id,
+              title: playlist.title,
+              tracks: playlist.tracks.map((track) => track.trackId),
+            })),
+          }
+        : {
+            subscriptions: [],
+            playlists: [],
+          }
+    );
   } catch (error) {
     return res.status(500);
   }
