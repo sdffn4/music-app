@@ -8,9 +8,11 @@ import useDeletePlaylist from "@/hooks/react-query/useDeletePlaylist";
 import useUnsubscribe from "@/hooks/react-query/useUnsubscribe";
 
 import { EllipsisIcon } from "@/components/icons";
-import { Button, Dropdown, Input, Modal } from "react-daisyui";
+import { Button, Dropdown } from "react-daisyui";
 
 import { v4 as uuidv4 } from "uuid";
+
+import CreatePlaylistModal from "@/components/CreatePlaylistModal";
 
 export default function Library() {
   const session = useSession();
@@ -26,12 +28,11 @@ export default function Library() {
   const { mutate: mutateUnsubscription, isLoading: isUnsubscriptionLoading } =
     useUnsubscribe();
 
-  const createPlaylist = () => {
+  const createPlaylist = async (title: string, file?: File) => {
     toggleVisible();
-    setTitle("");
 
     const id = uuidv4();
-    mutateCreation({ id, title });
+    mutateCreation({ id, title, file });
   };
 
   const deletePlaylist = (playlistId: string) => {
@@ -41,8 +42,6 @@ export default function Library() {
   const unsubscribe = (subscriptionId: string) => {
     mutateUnsubscription({ subscriptionId });
   };
-
-  const [title, setTitle] = useState<string>("");
 
   const [visible, setVisible] = useState<boolean>(false);
   const toggleVisible = () => setVisible((previous) => !previous);
@@ -73,36 +72,12 @@ export default function Library() {
             Create
           </Button>
 
-          <Modal open={visible} onClickBackdrop={toggleVisible}>
-            <Modal.Body>
-              <div className="form-control w-full max-w-xs">
-                <label className="label px-2">
-                  <span className="label-text">
-                    {"What's the playlist title?"}
-                  </span>
-                </label>
-                <Input
-                  placeholder="Title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
-              </div>
-            </Modal.Body>
-
-            <Modal.Actions>
-              <Button
-                color="success"
-                onClick={createPlaylist}
-                loading={isCreationLoading}
-                disabled={!title || isCreationLoading}
-              >
-                Create
-              </Button>
-              <Button onClick={toggleVisible} disabled={isCreationLoading}>
-                Cancel
-              </Button>
-            </Modal.Actions>
-          </Modal>
+          <CreatePlaylistModal
+            visible={visible}
+            toggleVisible={toggleVisible}
+            isLoading={isCreationLoading}
+            createPlaylist={createPlaylist}
+          />
         </div>
 
         <div>
