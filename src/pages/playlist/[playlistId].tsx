@@ -8,22 +8,26 @@ import type {
 import useLibrary from "@/hooks/react-query/useLibrary";
 import useSubscribe from "@/hooks/react-query/useSubscribe";
 import useUnsubscribe from "@/hooks/react-query/useUnsubscribe";
+import useRemoveTracks from "@/hooks/react-query/useRemoveTracks";
 
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 
 import usePlayerStore from "@/store";
 
 import Track from "@/components/Track";
 import { Button, Card } from "react-daisyui";
+import { GoBackIcon } from "@/components/icons";
 
 import prisma from "../../lib/prismadb";
 
 import { v4 as uuidv4 } from "uuid";
+import useUnmount from "@/hooks/useUnmount";
 
 export const getStaticPaths: GetStaticPaths = async () => {
   return {
     paths: [],
-    fallback: true,
+    fallback: "blocking",
   };
 };
 
@@ -74,11 +78,29 @@ export default function Playlist({
   const session = useSession();
   const isOwner = session.data?.user?.email === user?.email;
 
-  const library = useLibrary();
-  const subscription = library.data?.subscriptions
+  const { data: library, isLoading: isLibraryLoading } = useLibrary();
+  const subscription = library?.subscriptions
     .filter((subscription) => subscription.playlist.id === playlistId)
     .pop();
   const isSubscribed = Boolean(subscription);
+
+  const { mutate: mutateRemove } = useRemoveTracks();
+
+  const [tracksToRemove, setTracksToRemove] = useState<string[]>([]);
+
+  const makeTrackReadyToRemove = (trackId: string) => {
+    setTracksToRemove((previous) => [...previous, trackId]);
+  };
+
+  const restoreTrack = (trackId: string) => {
+    setTracksToRemove((previous) => previous.filter((id) => id !== trackId));
+  };
+
+  useUnmount(() => {
+    if (playlistId && tracksToRemove.length > 0) {
+      mutateRemove({ playlistId, tracks: tracksToRemove });
+    }
+  });
 
   const { mutate: mutateSubscription, isLoading: isSubscriptionLoading } =
     useSubscribe();
@@ -143,7 +165,11 @@ export default function Playlist({
                 {isSubscribed ? (
                   <Button
                     loading={isSubscriptionLoading || isUnsubscriptionLoading}
-                    disabled={isSubscriptionLoading || isUnsubscriptionLoading}
+                    disabled={
+                      isSubscriptionLoading ||
+                      isUnsubscriptionLoading ||
+                      isLibraryLoading
+                    }
                     onClick={unsubscribe}
                   >
                     Unsubscribe
@@ -151,7 +177,11 @@ export default function Playlist({
                 ) : (
                   <Button
                     loading={isSubscriptionLoading || isUnsubscriptionLoading}
-                    disabled={isSubscriptionLoading || isUnsubscriptionLoading}
+                    disabled={
+                      isSubscriptionLoading ||
+                      isUnsubscriptionLoading ||
+                      isLibraryLoading
+                    }
                     onClick={subscribe}
                   >
                     Subscribe
@@ -167,14 +197,29 @@ export default function Playlist({
         {tracks && tracks.length > 0 ? (
           tracks.map((track, index) => {
             const isActive = track.id === currentTrack?.id && isPlaying;
+            const isTrackReadyToRemove = tracksToRemove.includes(track.id);
 
-            return (
+            return isTrackReadyToRemove ? (
+              <div
+                key={track.id}
+                className="flex justify-between items-center py-2 ml-16 mr-8"
+              >
+                <p className={`${isActive ? "font-bold" : null} opacity-40`}>
+                  {track.title}
+                </p>
+
+                <Button size="xs" onClick={() => restoreTrack(track.id)}>
+                  <GoBackIcon />
+                </Button>
+              </div>
+            ) : (
               <Track
                 key={track.id}
                 index={index}
                 isActive={isActive}
                 track={track}
                 onClick={() => play(track, index)}
+                onRemove={makeTrackReadyToRemove}
               />
             );
           })

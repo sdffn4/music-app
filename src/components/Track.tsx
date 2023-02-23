@@ -10,9 +10,16 @@ interface TrackProps {
   track: TrackType;
   isActive: boolean;
   onClick: () => void;
+  onRemove?: (trackId: string) => void;
 }
 
-const Track: React.FC<TrackProps> = ({ index, track, isActive, onClick }) => {
+const Track: React.FC<TrackProps> = ({
+  index,
+  track,
+  isActive,
+  onClick,
+  onRemove,
+}) => {
   return (
     <div className="flex justify-between items-center mx-4">
       <div className="flex py-2 space-x-2">
@@ -30,13 +37,13 @@ const Track: React.FC<TrackProps> = ({ index, track, isActive, onClick }) => {
         </p>
       </div>
 
-      <Dropdown horizontal="left" vertical="middle">
+      <Dropdown horizontal="left" vertical="middle" className="pr-4">
         <Dropdown.Toggle size="xs">
           <EllipsisIcon />
         </Dropdown.Toggle>
 
         <Dropdown.Menu className="w-52 m-1">
-          <TrackDropdown index={index} track={track} />
+          <TrackDropdown index={index} track={track} onRemove={onRemove} />
         </Dropdown.Menu>
       </Dropdown>
     </div>
