@@ -9,7 +9,7 @@ import type { AuthorizeUploadApi } from "../api/authorize_upload";
 import axios, { AxiosError } from "axios";
 import { CreateTrackApi } from "../api/create_track";
 
-import { unstable_getServerSession } from "next-auth";
+import { getServerSession } from "next-auth";
 import { authOptions } from "../api/auth/[...nextauth]";
 import * as musicMetadata from "music-metadata-browser";
 
@@ -19,7 +19,7 @@ import { useState } from "react";
 import usePlayerStore from "@/store";
 
 import Track from "@/components/Track";
-import { FileInput, Progress, RadialProgress } from "react-daisyui";
+import { FileInput, RadialProgress } from "react-daisyui";
 import { CheckboxIcon } from "@/components/icons";
 import Image from "next/image";
 
@@ -27,7 +27,7 @@ export const getServerSideProps = async ({
   req,
   res,
 }: GetServerSidePropsContext) => {
-  const session = await unstable_getServerSession(req, res, authOptions);
+  const session = await getServerSession(req, res, authOptions);
 
   if (!session) {
     return {
@@ -242,7 +242,7 @@ export default function Uploads({
   return (
     <div className="min-h-page">
       <div className="text-center py-2">
-        <FileInput multiple onChange={uploadFiles} />
+        <FileInput multiple onChange={uploadFiles} bordered />
       </div>
 
       <div className="flex flex-col divide-y divide-white divide-opacity-10 mx-6">
