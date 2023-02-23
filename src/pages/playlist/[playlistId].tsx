@@ -42,6 +42,7 @@ export const getStaticProps = async (ctx: GetStaticPropsContext) => {
       id: true,
       title: true,
       duration: true,
+      cover: true,
       user: {
         select: {
           email: true,
@@ -60,6 +61,7 @@ export const getStaticProps = async (ctx: GetStaticPropsContext) => {
       playlistId: response?.id,
       title: response?.title,
       duration: response?.duration,
+      cover: response?.cover,
       user: response?.user,
       tracks: response?.tracks.map((track) => ({
         ...track.track,
@@ -70,6 +72,7 @@ export const getStaticProps = async (ctx: GetStaticPropsContext) => {
 
 export default function Playlist({
   playlistId,
+  cover,
   title,
   duration,
   tracks,
@@ -149,7 +152,7 @@ export default function Playlist({
   return (
     <div className="min-h-page">
       <PlaylistHeader
-        src=""
+        src={cover ?? ""}
         title={title ?? ""}
         duration={duration ?? -1}
         tracksCount={tracks ? tracks.length : -1}
