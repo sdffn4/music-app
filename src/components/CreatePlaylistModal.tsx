@@ -93,7 +93,7 @@ const CreatePlaylistModal: React.FC<CreatePlaylistModalProps> = ({
           color="primary"
           onClick={create}
           loading={isLoading}
-          disabled={isLoading}
+          disabled={isLoading || !title}
         >
           Create
         </Button>

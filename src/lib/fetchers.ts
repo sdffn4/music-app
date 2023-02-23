@@ -34,7 +34,7 @@ export const createPlaylist = async (args: {
   title: string;
   file: File | undefined;
 }) => {
-  const secure_url = args.file ? await uploadImage(args.file) : null;
+  const secure_url = args.file ? await uploadImage(args.file) : "";
 
   return (
     await axios.post<CreatePlaylistApi>(`/api/playlist/create`, {
