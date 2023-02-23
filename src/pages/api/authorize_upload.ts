@@ -12,10 +12,18 @@ export type AuthorizeUploadApi = {
   api_key: string;
 };
 
+interface Request extends NextApiRequest {
+  body: {
+    folder: string;
+  };
+}
+
 export default async function handler(
-  req: NextApiRequest,
+  req: Request,
   res: NextApiResponse<AuthorizeUploadApi>
 ) {
+  if (req.method !== "POST") return res.status(400);
+
   const session = await getServerSession(req, res, authOptions);
 
   if (!session) return res.status(403);
@@ -27,6 +35,8 @@ export default async function handler(
 
   const timestamp = String(Math.round(new Date().getTime() / 1000));
 
+  const { folder } = req.body;
+
   v2.config({
     api_key: process.env.api_key,
     api_secret: process.env.api_secret,
@@ -36,7 +46,7 @@ export default async function handler(
   const signature = v2.utils.api_sign_request(
     {
       timestamp,
-      folder: "tracks",
+      folder,
     },
     api_secret
   );
