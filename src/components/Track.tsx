@@ -30,7 +30,7 @@ const Track: React.FC<TrackProps> = ({ index, track, isActive, onClick }) => {
         </p>
       </div>
 
-      <Dropdown horizontal="left" vertical="middle" hover>
+      <Dropdown horizontal="left" vertical="middle">
         <Dropdown.Toggle size="xs">
           <EllipsisIcon />
         </Dropdown.Toggle>
