@@ -29,6 +29,7 @@ model Playlist {
   id            String              @id @default(uuid())
   title         String
   duration      Int                 @default(0)
+  cover         String              @default("")
   user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId        String
   tracks        TracksOnPlaylists[]
