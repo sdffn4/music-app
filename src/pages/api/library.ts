@@ -1,12 +1,28 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+
 import { unstable_getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
+
 import prisma from "../../lib/prismadb";
-import type { LibraryApiResponse } from "@/types/api";
+
+export interface LibraryApi {
+  playlists: {
+    id: string;
+    title: string;
+    tracks: Array<string>;
+  }[];
+  subscriptions: {
+    id: string;
+    playlist: {
+      id: string;
+      title: string;
+    };
+  }[];
+}
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<LibraryApiResponse>
+  res: NextApiResponse<LibraryApi>
 ) {
   if (req.method !== "GET") return res.status(405);
 
