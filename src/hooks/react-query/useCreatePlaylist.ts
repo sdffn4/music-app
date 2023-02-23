@@ -1,5 +1,6 @@
+import { LibraryApi } from "@/pages/api/library";
+
 import { createPlaylist } from "@/lib/fetchers";
-import { LibraryApiResponse } from "@/types/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const useCreatePlaylist = () => {
@@ -10,11 +11,9 @@ const useCreatePlaylist = () => {
     onMutate: async ({ id, title }) => {
       await queryClient.cancelQueries({ queryKey: ["library"] });
 
-      const previousLibrary = queryClient.getQueryData<LibraryApiResponse>([
-        "library",
-      ]);
+      const previousLibrary = queryClient.getQueryData<LibraryApi>(["library"]);
 
-      queryClient.setQueryData<LibraryApiResponse>(["library"], (old) => {
+      queryClient.setQueryData<LibraryApi>(["library"], (old) => {
         if (old) {
           return {
             playlists: [
@@ -22,6 +21,7 @@ const useCreatePlaylist = () => {
               {
                 id,
                 title,
+                tracks: [],
               },
             ],
             subscriptions: old.subscriptions,

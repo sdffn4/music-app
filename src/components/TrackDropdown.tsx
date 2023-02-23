@@ -1,10 +1,14 @@
-import useAddTrack from "@/hooks/react-query/useAddTrack";
-import useLibrary from "@/hooks/react-query/useLibrary";
-import useRemoveTrack from "@/hooks/react-query/useRemoveTrack";
-import usePlayerStore from "@/store";
-import { TrackType } from "@/types";
+import type { TrackType } from "@/types";
+
 import { useRouter } from "next/router";
-import { Alert, Button, Checkbox, Dropdown } from "react-daisyui";
+
+import usePlayerStore from "@/store";
+
+import useLibrary from "@/hooks/react-query/useLibrary";
+import useAddTrack from "@/hooks/react-query/useAddTrack";
+import useRemoveTrack from "@/hooks/react-query/useRemoveTrack";
+
+import { Alert, Button, Checkbox } from "react-daisyui";
 
 interface TrackDropdownProps {
   index: number;

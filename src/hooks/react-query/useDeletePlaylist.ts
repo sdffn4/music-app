@@ -1,5 +1,6 @@
+import { LibraryApi } from "@/pages/api/library";
+
 import { removePlaylist } from "@/lib/fetchers";
-import { LibraryApiResponse } from "@/types/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const useDeletePlaylist = () => {
@@ -10,11 +11,9 @@ const useDeletePlaylist = () => {
     onMutate: async ({ playlistId }) => {
       await queryClient.cancelQueries({ queryKey: ["library"] });
 
-      const previousLibrary = queryClient.getQueryData<LibraryApiResponse>([
-        "library",
-      ]);
+      const previousLibrary = queryClient.getQueryData<LibraryApi>(["library"]);
 
-      queryClient.setQueryData<LibraryApiResponse>(["library"], (old) => {
+      queryClient.setQueryData<LibraryApi>(["library"], (old) => {
         if (old) {
           return {
             playlists: old.playlists.filter(

@@ -1,7 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { v2 } from "cloudinary";
+
 import { unstable_getServerSession } from "next-auth";
 import { authOptions } from "./auth/[...nextauth]";
+
+import { v2 } from "cloudinary";
 
 export type AuthorizeUploadApi = {
   timestamp: string;

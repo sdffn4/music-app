@@ -1,5 +1,6 @@
+import { LibraryApi } from "@/pages/api/library";
+
 import { unsubscribeFromPlaylist } from "@/lib/fetchers";
-import { LibraryApiResponse } from "@/types/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const useUnsubscribe = () => {
@@ -10,11 +11,9 @@ const useUnsubscribe = () => {
     onMutate: async ({ subscriptionId }) => {
       await queryClient.cancelQueries({ queryKey: ["library"] });
 
-      const previousLibrary = queryClient.getQueryData<LibraryApiResponse>([
-        "library",
-      ]);
+      const previousLibrary = queryClient.getQueryData<LibraryApi>(["library"]);
 
-      queryClient.setQueryData<LibraryApiResponse>(["library"], (old) => {
+      queryClient.setQueryData<LibraryApi>(["library"], (old) => {
         if (old) {
           return {
             playlists: old.playlists,

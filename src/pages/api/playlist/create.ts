@@ -1,8 +1,14 @@
-import type { CreatePlaylistApiResponse } from "@/types/api";
 import type { NextApiRequest, NextApiResponse } from "next";
+
 import { unstable_getServerSession } from "next-auth";
-import prisma from "../../../lib/prismadb";
 import { authOptions } from "../auth/[...nextauth]";
+
+import prisma from "../../../lib/prismadb";
+
+export interface CreatePlaylistApi {
+  id: string;
+  title: string;
+}
 
 interface Request extends NextApiRequest {
   body: {
@@ -13,7 +19,7 @@ interface Request extends NextApiRequest {
 
 export default async function handler(
   req: Request,
-  res: NextApiResponse<CreatePlaylistApiResponse>
+  res: NextApiResponse<CreatePlaylistApi>
 ) {
   if (req.method !== "POST") return res.status(405);
 

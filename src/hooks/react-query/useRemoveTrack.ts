@@ -1,5 +1,6 @@
+import { LibraryApi } from "@/pages/api/library";
+
 import { removeTrackFromPlaylist } from "@/lib/fetchers";
-import { LibraryApiResponse } from "@/types/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const useRemoveTrack = () => {
@@ -10,11 +11,9 @@ const useRemoveTrack = () => {
     onMutate: async ({ playlistId, trackId }) => {
       await queryClient.cancelQueries({ queryKey: ["library"] });
 
-      const previousLibrary = queryClient.getQueryData<LibraryApiResponse>([
-        "library",
-      ]);
+      const previousLibrary = queryClient.getQueryData<LibraryApi>(["library"]);
 
-      queryClient.setQueryData<LibraryApiResponse>(["library"], (old) => {
+      queryClient.setQueryData<LibraryApi>(["library"], (old) => {
         if (old) {
           const playlist = old.playlists
             .filter((el) => el.id === playlistId)
@@ -32,7 +31,7 @@ const useRemoveTrack = () => {
       return { previousLibrary };
     },
     onError: (_, __, context) => {
-      queryClient.setQueryData<LibraryApiResponse>(
+      queryClient.setQueryData<LibraryApi>(
         ["library"],
         context?.previousLibrary
       );
