@@ -23,9 +23,9 @@ export const addTrackToPlaylist = async (args: {
   return (await axios.post(`/api/track/add`, args)).data;
 };
 
-export const removeTrackFromPlaylist = async (args: {
+export const removeTracksFromPlaylist = async (args: {
   playlistId: string;
-  trackId: string;
+  tracks: string[];
 }) => {
   return (await axios.post(`/api/track/remove`, args)).data;
 };
