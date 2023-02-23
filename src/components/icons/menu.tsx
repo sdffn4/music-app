@@ -11,12 +11,12 @@ import {
   RiCheckboxBlankCircleLine,
 } from "react-icons/ri";
 
-const activeMenuIcon = `w-[24px] h-[24px] opacity-100`;
-const passiveMenuIcon = `w-[24px] h-[24px] opacity-50`;
+const activeMenuIcon = `w-7 h-7 opacity-100`;
+const passiveMenuIcon = `w-7 h-7 opacity-50`;
 
 /* active buttons */
 export const HomeIconActive = () => (
-  <RiCheckboxBlankFill className={`${activeMenuIcon}`} />
+  <RiCheckboxBlankFill className={`w-${activeMenuIcon}`} />
 );
 export const LibraryIconActive = () => (
   <RiAddBoxFill className={`${activeMenuIcon}`} />

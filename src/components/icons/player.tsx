@@ -7,7 +7,7 @@ import {
   RiPlayListAddLine,
 } from "react-icons/ri";
 
-const playerIcon = `w-[24px] h-[24px]`;
+const playerIcon = `w-5 h-5`;
 
 export const PlayIcon = () => <RiPlayFill className={`${playerIcon}`} />;
 export const PauseIcon = () => <RiPauseFill className={`${playerIcon}`} />;
