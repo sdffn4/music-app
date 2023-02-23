@@ -46,9 +46,17 @@ export default function Library() {
   const [visible, setVisible] = useState<boolean>(false);
   const toggleVisible = () => setVisible((previous) => !previous);
 
-  if (!session) {
+  if (session.status === "loading") {
     return (
-      <div className="flex justify-center items-center h-full">
+      <div className="flex justify-center items-center min-h-page">
+        Loading...
+      </div>
+    );
+  }
+
+  if (session.status === "unauthenticated") {
+    return (
+      <div className="flex justify-center items-center min-h-page">
         You have to sign in to be able to manage your library.
       </div>
     );
