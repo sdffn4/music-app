@@ -21,6 +21,7 @@ const useCreatePlaylist = () => {
               {
                 id,
                 title,
+                cover: "",
                 tracks: [],
               },
             ],

@@ -18,7 +18,10 @@ const useSubscribe = () => {
             playlists: old.playlists,
             subscriptions: [
               ...old.subscriptions,
-              { id, playlist: { id: playlistId, title } },
+              {
+                id,
+                playlist: { id: playlistId, title, cover: "", tracks: [] },
+              },
             ],
           };
         }

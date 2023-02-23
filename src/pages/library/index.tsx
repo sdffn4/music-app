@@ -1,5 +1,7 @@
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
+import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 
 import useLibrary from "@/hooks/react-query/useLibrary";
@@ -8,13 +10,15 @@ import useDeletePlaylist from "@/hooks/react-query/useDeletePlaylist";
 import useUnsubscribe from "@/hooks/react-query/useUnsubscribe";
 
 import { EllipsisIcon } from "@/components/icons";
-import { Button, Dropdown } from "react-daisyui";
+import { Button, Divider, Dropdown } from "react-daisyui";
 
 import { v4 as uuidv4 } from "uuid";
 
 import CreatePlaylistModal from "@/components/CreatePlaylistModal";
 
 export default function Library() {
+  const router = useRouter();
+
   const session = useSession();
 
   const { data: library } = useLibrary();
@@ -64,39 +68,60 @@ export default function Library() {
 
   return (
     <div className="min-h-page">
-      <Link href="/library/uploads">
-        <div className="flex justify-between items-center p-4 hover:bg-primary-focus hover:cursor-pointer">
-          <div>Your uploads</div>
-          <UploadsDropdown>
-            <Dropdown.Item>There is nothing in here yet</Dropdown.Item>
-          </UploadsDropdown>
-        </div>
-      </Link>
-
       <div className="flex flex-col">
-        <div className="flex items-center">
-          <h2 className="px-4 py-2 font-semibold">Your playlists</h2>
-          <Button size="sm" onClick={toggleVisible}>
-            Create
-          </Button>
-
-          <CreatePlaylistModal
-            visible={visible}
-            toggleVisible={toggleVisible}
-            isLoading={isCreationLoading}
-            createPlaylist={createPlaylist}
-          />
+        <div
+          onClick={() => router.push(`/library/uploads`)}
+          className="border border-primary rounded-md text-center p-4 m-4 text-lg shadow-lg hover:cursor-pointer"
+        >
+          your uploads
         </div>
 
-        <div>
+        <Divider
+          color="primary"
+          className="flex w-full justify-center items-center py-6"
+        >
+          <p className="text-lg">your playlists</p>
+
+          <Button color="secondary" size="sm" onClick={toggleVisible}>
+            create
+          </Button>
+        </Divider>
+
+        <CreatePlaylistModal
+          visible={visible}
+          toggleVisible={toggleVisible}
+          isLoading={isCreationLoading}
+          createPlaylist={createPlaylist}
+        />
+
+        <div className="flex gap-4 justify-center flex-wrap sm:flex-col lg:flex-row">
           {library && library.playlists.length > 0 ? (
             library.playlists.map((playlist) => (
-              <Link href={`/playlist/${playlist.id}`} key={playlist.id}>
-                <div className="flex justify-between items-center p-4 hover:bg-primary-focus hover:cursor-pointer">
-                  <div>{playlist.title}</div>
+              <div
+                onClick={() => router.push(`/playlist/${playlist.id}`)}
+                key={playlist.id}
+                className="flex lg:w-1/3 shadow-lg sm:mx-4 border border-primary border-opacity-40 divide-x divide-primary divide-opacity-40 hover:cursor-pointer"
+              >
+                <div className="w-32 h-32 relative shrink-0">
+                  <Image
+                    fill
+                    src={playlist.cover ? playlist.cover : "/vercel.svg"}
+                    alt="cover"
+                  />
+                </div>
+
+                <div className="hidden sm:flex p-4 items-center justify-between w-full">
+                  <div className="flex flex-col">
+                    <h3 className="text-xl font-medium">{playlist.title}</h3>
+                    <p>{`${playlist.tracks.length} track${
+                      playlist.tracks.length === 1 ? "" : "s"
+                    }`}</p>
+                  </div>
+
                   <PlaylistDropdown>
                     <Button
-                      className="hover:text-warning"
+                      color="primary"
+                      size="sm"
                       disabled={isDeletionLoading}
                       loading={isDeletionLoading}
                       onClick={() => deletePlaylist(playlist.id)}
@@ -105,7 +130,7 @@ export default function Library() {
                     </Button>
                   </PlaylistDropdown>
                 </div>
-              </Link>
+              </div>
             ))
           ) : (
             <div className="m-4 text-center">
@@ -116,20 +141,46 @@ export default function Library() {
       </div>
 
       <div className="flex flex-col">
-        <h2 className="px-4 py-2 font-semibold">Your subscriptions</h2>
+        <Divider color="primary" className="py-6 text-lg">
+          your subscriptions
+        </Divider>
 
-        <div>
+        <div className="flex gap-4 justify-center flex-wrap sm:flex-col">
           {library && library.subscriptions.length > 0 ? (
             library.subscriptions.map((subscription) => (
-              <Link
+              <div
                 key={subscription.id}
-                href={`/playlist/${subscription.playlist.id}`}
+                onClick={() =>
+                  router.push(`/playlist/${subscription.playlist.id}`)
+                }
+                className="flex shadow-lg sm:mx-4 border border-primary border-opacity-40 divide-x divide-primary divide-opacity-40 hover:cursor-pointer"
               >
-                <div className="flex justify-between items-center p-4 hover:bg-primary-focus hover:cursor-pointer">
-                  <div>{subscription.playlist.title}</div>
+                <div className="w-32 h-32 relative shrink-0">
+                  <Image
+                    fill
+                    src={
+                      subscription.playlist.cover
+                        ? subscription.playlist.cover
+                        : "/vercel.svg"
+                    }
+                    alt="cover"
+                  />
+                </div>
+
+                <div className="hidden sm:flex p-4 items-center justify-between w-full">
+                  <div className="flex flex-col">
+                    <h3 className="text-xl font-medium">
+                      {subscription.playlist.title}
+                    </h3>
+                    <p>{`${subscription.playlist.tracks.length} track${
+                      subscription.playlist.tracks.length === 1 ? "" : "s"
+                    }`}</p>
+                  </div>
+
                   <SubscriptionDropdown>
                     <Button
-                      className="hover:text-warning"
+                      color="primary"
+                      size="sm"
                       onClick={() => unsubscribe(subscription.id)}
                       disabled={isUnsubscriptionLoading}
                       loading={isUnsubscriptionLoading}
@@ -138,7 +189,7 @@ export default function Library() {
                     </Button>
                   </SubscriptionDropdown>
                 </div>
-              </Link>
+              </div>
             ))
           ) : (
             <div className="m-4 text-center">
@@ -161,7 +212,10 @@ const UploadsDropdown: React.FC<UploadsDropdownProps> = ({ children }) => {
     <Dropdown
       horizontal="left"
       vertical="middle"
-      onClick={(e) => e.preventDefault()}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
     >
       <Dropdown.Toggle size="sm">
         <EllipsisIcon />
@@ -181,13 +235,16 @@ const PlaylistDropdown: React.FC<PlaylistDropdownProps> = ({ children }) => {
     <Dropdown
       horizontal="left"
       vertical="middle"
-      onClick={(e) => e.preventDefault()}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
     >
-      <Dropdown.Toggle size="sm">
+      <Dropdown.Toggle size="sm" color="primary">
         <EllipsisIcon />
       </Dropdown.Toggle>
 
-      <Dropdown.Menu className="w-64 m-1">{children}</Dropdown.Menu>
+      <Dropdown.Menu className="w-56 m-1">{children}</Dropdown.Menu>
     </Dropdown>
   );
 };
@@ -203,13 +260,16 @@ const SubscriptionDropdown: React.FC<SubscriptionDropdownProps> = ({
     <Dropdown
       horizontal="left"
       vertical="middle"
-      onClick={(e) => e.preventDefault()}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
     >
-      <Dropdown.Toggle size="sm">
+      <Dropdown.Toggle size="sm" color="primary">
         <EllipsisIcon />
       </Dropdown.Toggle>
 
-      <Dropdown.Menu className="w-64 m-1">{children}</Dropdown.Menu>
+      <Dropdown.Menu className="w-56 m-1">{children}</Dropdown.Menu>
     </Dropdown>
   );
 };

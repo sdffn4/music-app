@@ -9,13 +9,16 @@ export interface LibraryApi {
   playlists: {
     id: string;
     title: string;
-    tracks: Array<string>;
+    tracks: string[];
+    cover: string;
   }[];
   subscriptions: {
     id: string;
     playlist: {
       id: string;
       title: string;
+      cover: string;
+      tracks: string[];
     };
   }[];
 }
@@ -40,6 +43,13 @@ export default async function handler(
           select: {
             id: true,
             title: true,
+            cover: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
             tracks: {
               select: {
                 trackId: true,
@@ -54,6 +64,18 @@ export default async function handler(
               select: {
                 id: true,
                 title: true,
+                cover: true,
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+                tracks: {
+                  select: {
+                    trackId: true,
+                  },
+                },
               },
             },
           },
@@ -64,10 +86,20 @@ export default async function handler(
     return res.status(200).json(
       resp
         ? {
-            subscriptions: [...resp.subscriptions],
+            subscriptions: resp.subscriptions.map((subscription) => ({
+              id: subscription.id,
+              playlist: {
+                ...subscription.playlist,
+                tracks: subscription.playlist.tracks.map(
+                  (track) => track.trackId
+                ),
+              },
+            })),
             playlists: resp.playlists.map((playlist) => ({
               id: playlist.id,
               title: playlist.title,
+              cover: playlist.cover,
+              user: playlist.user,
               tracks: playlist.tracks.map((track) => track.trackId),
             })),
           }
