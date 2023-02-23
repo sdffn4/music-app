@@ -8,7 +8,7 @@ import prisma from "../../../lib/prismadb";
 interface Request extends NextApiRequest {
   body: {
     playlistId: string;
-    trackId: string;
+    tracks: string[];
   };
 }
 
@@ -19,7 +19,7 @@ export default async function handler(req: Request, res: NextApiResponse) {
 
   if (!session) return res.status(403);
 
-  const { playlistId, trackId } = req.body;
+  const { playlistId, tracks } = req.body;
 
   try {
     const playlist = await prisma.playlist.findUnique({
@@ -39,16 +39,22 @@ export default async function handler(req: Request, res: NextApiResponse) {
       return res.status(403);
     }
 
-    await prisma.tracksOnPlaylists.delete({
+    await prisma.tracksOnPlaylists.deleteMany({
       where: {
-        playlistId_trackId: {
-          playlistId,
-          trackId,
-        },
+        AND: [
+          {
+            playlistId,
+          },
+          {
+            trackId: { in: tracks },
+          },
+        ],
       },
     });
 
-    return res.status(200).json({ status: true, trackId, playlistId });
+    await res.revalidate(`/playlist/${playlistId}`);
+
+    return res.status(200).json({ status: true, tracks, playlistId });
   } catch (error) {
     return res.status(500);
   }

@@ -6,17 +6,22 @@ import usePlayerStore from "@/store";
 
 import useLibrary from "@/hooks/react-query/useLibrary";
 import useAddTrack from "@/hooks/react-query/useAddTrack";
-import useRemoveTrack from "@/hooks/react-query/useRemoveTrack";
+import useRemoveTrack from "@/hooks/react-query/useRemoveTracks";
 
 import { Alert, Button, Checkbox } from "react-daisyui";
 
 interface TrackDropdownProps {
   index: number;
   track: TrackType;
+  onRemove?: (trackId: string) => void;
 }
 
-const TrackDropdown: React.FC<TrackDropdownProps> = ({ index, track }) => {
-  const { pathname } = useRouter();
+const TrackDropdown: React.FC<TrackDropdownProps> = ({
+  index,
+  track,
+  onRemove,
+}) => {
+  const { pathname, query } = useRouter();
 
   const { addToQueue, removeFromQueue } = usePlayerStore((state) => state);
 
@@ -29,7 +34,11 @@ const TrackDropdown: React.FC<TrackDropdownProps> = ({ index, track }) => {
   };
 
   const removeFromPlaylist = (playlistId: string) => {
-    mutateRemove({ playlistId, trackId: track.id });
+    if (onRemove && query.playlistId === playlistId) {
+      onRemove(track.id);
+    } else {
+      mutateRemove({ playlistId, tracks: [track.id] });
+    }
   };
 
   return (

@@ -46,6 +46,8 @@ export default async function handler(req: Request, res: NextApiResponse) {
       },
     });
 
+    await res.revalidate(`/playlist/${playlistId}`);
+
     return res.status(200).json({ status: true, trackId, playlistId });
   } catch (error) {
     return res.status(500);
