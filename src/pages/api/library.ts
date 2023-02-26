@@ -20,6 +20,10 @@ export interface LibraryApi {
       cover: string;
       tracks: string[];
     };
+    uncheckedTracks: {
+      trackId: string;
+      subscriptionId: string;
+    }[];
   }[];
 }
 
@@ -60,6 +64,12 @@ export default async function handler(
         subscriptions: {
           select: {
             id: true,
+            uncheckedTracks: {
+              select: {
+                subscriptionId: true,
+                trackId: true,
+              },
+            },
             playlist: {
               select: {
                 id: true,
@@ -94,6 +104,7 @@ export default async function handler(
                   (track) => track.trackId
                 ),
               },
+              uncheckedTracks: subscription.uncheckedTracks,
             })),
             playlists: resp.playlists.map((playlist) => ({
               id: playlist.id,

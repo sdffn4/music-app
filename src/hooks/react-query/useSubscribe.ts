@@ -21,6 +21,7 @@ const useSubscribe = () => {
               {
                 id,
                 playlist: { id: playlistId, title, cover: "", tracks: [] },
+                uncheckedTracks: [],
               },
             ],
           };

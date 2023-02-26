@@ -10,7 +10,7 @@ import useDeletePlaylist from "@/hooks/react-query/useDeletePlaylist";
 import useUnsubscribe from "@/hooks/react-query/useUnsubscribe";
 
 import { EllipsisIcon } from "@/components/icons";
-import { Button, Divider, Dropdown } from "react-daisyui";
+import { Badge, Button, Divider, Dropdown } from "react-daisyui";
 
 import { v4 as uuidv4 } from "uuid";
 
@@ -111,7 +111,7 @@ export default function Library() {
                 </div>
 
                 <div className="hidden sm:flex p-4 items-center justify-between w-full">
-                  <div className="flex flex-col">
+                  <div className="flex flex-col space-y-1">
                     <h3 className="text-xl font-medium">{playlist.title}</h3>
                     <p>{`${playlist.tracks.length} track${
                       playlist.tracks.length === 1 ? "" : "s"
@@ -168,13 +168,29 @@ export default function Library() {
                 </div>
 
                 <div className="hidden sm:flex p-4 items-center justify-between w-full">
-                  <div className="flex flex-col">
+                  <div className="flex flex-col space-y-1">
                     <h3 className="text-xl font-medium">
                       {subscription.playlist.title}
                     </h3>
-                    <p>{`${subscription.playlist.tracks.length} track${
-                      subscription.playlist.tracks.length === 1 ? "" : "s"
-                    }`}</p>
+
+                    <div className="flex items-center space-x-2">
+                      <p>
+                        {`${subscription.playlist.tracks.length} track${
+                          subscription.playlist.tracks.length === 1 ? "" : "s"
+                        }`}
+                      </p>
+
+                      {subscription.uncheckedTracks.length > 0 ? (
+                        <Badge
+                          className="font-semibold text-accent-content"
+                          color="primary"
+                        >
+                          +{subscription.uncheckedTracks.length}
+                        </Badge>
+                      ) : null}
+                    </div>
+
+                    {subscription.uncheckedTracks.length > 0 ? <p></p> : null}
                   </div>
 
                   <SubscriptionDropdown>
