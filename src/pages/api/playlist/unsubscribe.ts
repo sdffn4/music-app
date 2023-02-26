@@ -24,6 +24,12 @@ export default async function handler(
       },
     });
 
+    await prisma.uncheckedTracks.deleteMany({
+      where: {
+        subscriptionId,
+      },
+    });
+
     return res.status(200).json({ subscriptionId: resp.id });
   } catch (error) {
     return res.status(500);

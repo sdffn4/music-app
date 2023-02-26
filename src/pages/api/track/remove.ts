@@ -52,6 +52,28 @@ export default async function handler(req: Request, res: NextApiResponse) {
       },
     });
 
+    // probably not the best way to do that but let's so be it for now
+
+    const subs = (
+      await prisma.subscription.findMany({
+        where: {
+          playlistId,
+        },
+        select: {
+          id: true,
+        },
+      })
+    ).map((sub) => sub.id);
+
+    await prisma.uncheckedTracks.deleteMany({
+      where: {
+        AND: {
+          subscriptionId: { in: subs },
+          trackId: { in: tracks },
+        },
+      },
+    });
+
     await res.revalidate(`/playlist/${playlistId}`);
 
     return res.status(200).json({ status: true, tracks, playlistId });
