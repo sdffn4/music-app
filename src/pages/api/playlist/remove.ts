@@ -51,6 +51,20 @@ export default async function handler(
       },
     });
 
+    const subs = (
+      await prisma.subscription.findMany({
+        select: {
+          id: true,
+        },
+      })
+    ).map((sub) => sub.id);
+
+    await prisma.uncheckedTracks.deleteMany({
+      where: {
+        subscriptionId: { in: subs },
+      },
+    });
+
     return res.status(200).json({
       id: resp.id,
     });
