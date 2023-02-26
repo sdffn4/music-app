@@ -10,7 +10,7 @@ import useSubscribe from "@/hooks/react-query/useSubscribe";
 import useUnsubscribe from "@/hooks/react-query/useUnsubscribe";
 import useRemoveTracks from "@/hooks/react-query/useRemoveTracks";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 
 import usePlayerStore from "@/store";
@@ -21,8 +21,10 @@ import { GoBackIcon } from "@/components/icons";
 
 import prisma from "../../lib/prismadb";
 
+import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import useUnmount from "@/hooks/useUnmount";
+import useCheckAllTracks from "@/hooks/react-query/useCheckAllTracks";
 
 export const getStaticPaths: GetStaticPaths = async () => {
   return {
@@ -82,12 +84,16 @@ export default function Playlist({
   const isOwner = session.data?.user?.email === user?.email;
 
   const { data: library, isLoading: isLibraryLoading } = useLibrary();
+
   const subscription = library?.subscriptions
     .filter((subscription) => subscription.playlist.id === playlistId)
     .pop();
+
   const isSubscribed = Boolean(subscription);
 
   const { mutate: mutateRemove } = useRemoveTracks();
+
+  const { mutate: checkAllTracks } = useCheckAllTracks();
 
   const [tracksToRemove, setTracksToRemove] = useState<string[]>([]);
 
@@ -104,6 +110,12 @@ export default function Playlist({
       mutateRemove({ playlistId, tracks: tracksToRemove });
     }
   });
+
+  useEffect(() => {
+    if (subscription && subscription.uncheckedTracks.length > 0) {
+      checkAllTracks({ subscriptionId: subscription.id });
+    }
+  }, [subscription, checkAllTracks]);
 
   const { mutate: mutateSubscription, isLoading: isSubscriptionLoading } =
     useSubscribe();

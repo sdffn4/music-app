@@ -76,3 +76,7 @@ export const unsubscribeFromPlaylist = async (args: {
 }) => {
   return (await axios.post(`/api/playlist/unsubscribe`, args)).data;
 };
+
+export const checkAllTracks = async (args: { subscriptionId: string }) => {
+  return (await axios.put(`/api/check_all_tracks`, args)).data;
+};
