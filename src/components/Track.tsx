@@ -21,24 +21,22 @@ const Track: React.FC<TrackProps> = ({
   onRemove,
 }) => {
   return (
-    <div className="flex justify-between items-center mx-4">
-      <div className="flex py-2 space-x-2">
-        <p className="text-center self-center text-xs opacity-60 w-10 truncate">
-          {index + 1}
+    <div className="flex justify-between items-center rounded py-1">
+      <div className="flex hover:cursor-pointer" onClick={onClick}>
+        <p className="opacity-60 text-sm self-center text-center w-8 m-2 truncate">
+          {index}
         </p>
 
-        <p
-          className={`self-center truncate ${
-            isActive ? "font-bold" : null
-          } hover:cursor-pointer hover:underline`}
-          onClick={onClick}
-        >
-          {track.title}
-        </p>
+        <div className="w-96">
+          <p className={`truncate ${isActive ? "font-bold" : null}`}>
+            {track.title}
+          </p>
+          <p className="truncate text-sm">{track.artist}</p>
+        </div>
       </div>
 
-      <Dropdown horizontal="left" vertical="middle" className="pr-4">
-        <Dropdown.Toggle size="xs">
+      <Dropdown className="mx-10" horizontal="left" vertical="middle">
+        <Dropdown.Toggle size="xs" color="primary">
           <EllipsisIcon />
         </Dropdown.Toggle>
 

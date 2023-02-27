@@ -162,7 +162,7 @@ export default function Playlist({
   };
 
   return (
-    <div className="min-h-page">
+    <div className="min-h-page divide-y divide-primary">
       <PlaylistHeader
         src={cover ?? ""}
         title={title ?? ""}
@@ -179,6 +179,8 @@ export default function Playlist({
               <div>
                 {isSubscribed ? (
                   <Button
+                    color="primary"
+                    size="sm"
                     loading={isSubscriptionLoading || isUnsubscriptionLoading}
                     disabled={
                       isSubscriptionLoading ||
@@ -191,6 +193,8 @@ export default function Playlist({
                   </Button>
                 ) : (
                   <Button
+                    color="primary"
+                    size="sm"
                     loading={isSubscriptionLoading || isUnsubscriptionLoading}
                     disabled={
                       isSubscriptionLoading ||
@@ -208,7 +212,7 @@ export default function Playlist({
         }
       />
 
-      <div className="divide-y divide-neutral divide-opacity-10">
+      <div className="divide-y divide-primary divide-opacity-30">
         {tracks && tracks.length > 0 ? (
           tracks.map((track, index) => {
             const isActive = track.id === currentTrack?.id && isPlaying;
@@ -217,13 +221,27 @@ export default function Playlist({
             return isTrackReadyToRemove ? (
               <div
                 key={track.id}
-                className="flex justify-between items-center py-2 ml-16 mr-8"
+                className="flex justify-between items-center rounded py-1"
               >
-                <p className={`${isActive ? "font-bold" : null} opacity-40`}>
-                  {track.title}
-                </p>
+                <div className="flex">
+                  <p className="opacity-30 text-sm self-center text-center w-8 m-2 truncate">
+                    {index}
+                  </p>
 
-                <Button size="xs" onClick={() => restoreTrack(track.id)}>
+                  <div className="w-96 opacity-40">
+                    <p className={`truncate ${isActive ? "font-bold" : null}`}>
+                      {track.title}
+                    </p>
+                    <p className="truncate text-sm">{track.artist}</p>
+                  </div>
+                </div>
+
+                <Button
+                  className="mx-10"
+                  color="secondary"
+                  size="xs"
+                  onClick={() => restoreTrack(track.id)}
+                >
                   <GoBackIcon />
                 </Button>
               </div>
@@ -264,9 +282,9 @@ const PlaylistHeader: React.FC<PlaylistHeaderProps> = ({
   actions,
 }) => {
   return (
-    <Card side="sm" className="p-4">
+    <Card side="sm">
       <Card.Image
-        className="w-64 h-64 object-contain"
+        className="w-48 h-48 object-contain border border-primary m-3"
         src={src ? src : "/vercel.svg"}
         alt="cover"
       />

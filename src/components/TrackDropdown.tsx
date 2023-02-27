@@ -42,9 +42,14 @@ const TrackDropdown: React.FC<TrackDropdownProps> = ({
   };
 
   return (
-    <div className="divide-y divide-neutral space-y-2">
+    <div className="divide-y divide-neutral space-y-2 w-full">
       <div className="flex flex-col justify-center items-center space-y-2">
-        <Button className="w-full" size="xs" onClick={() => addToQueue(track)}>
+        <Button
+          className="w-full"
+          size="xs"
+          color="primary"
+          onClick={() => addToQueue(track)}
+        >
           Add to queue
         </Button>
 
@@ -52,6 +57,7 @@ const TrackDropdown: React.FC<TrackDropdownProps> = ({
           <Button
             className="w-full"
             size="xs"
+            color="primary"
             onClick={() => removeFromQueue(index)}
           >
             Remove from queue
@@ -67,18 +73,24 @@ const TrackDropdown: React.FC<TrackDropdownProps> = ({
             return (
               <Button
                 key={playlist.id}
-                className="w-full flex justify-between items-center"
+                className="flex justify-between items-center flex-nowrap w-full space-x-3"
                 size="sm"
+                color="primary"
                 onClick={
                   isTrackInPlaylist
                     ? () => removeFromPlaylist(playlist.id)
                     : () => addToPlaylist(playlist.id)
                 }
               >
-                <div className="w-full flex justify-between items-center">
-                  <Checkbox size="xs" readOnly checked={isTrackInPlaylist} />
-                  <p className="text-sm font-semibold">{playlist.title}</p>
-                </div>
+                <Checkbox
+                  size="xs"
+                  readOnly
+                  checked={isTrackInPlaylist}
+                  color="primary"
+                />
+                <p className="text-sm font-semibold truncate">
+                  {playlist.title}
+                </p>
               </Button>
             );
           })
