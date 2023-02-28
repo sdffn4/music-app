@@ -13,7 +13,7 @@ export default async function handler(
 
   const session = await getServerSession(req, res, authOptions);
 
-  if (!session) return res.status(403);
+  if (!session || !session.user?.email) return res.status(403);
 
   try {
     const { id, playlistId } = req.body;
@@ -28,7 +28,7 @@ export default async function handler(
         },
         user: {
           connect: {
-            email: session.user?.email as string | undefined,
+            email: session.user.email,
           },
         },
       },

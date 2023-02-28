@@ -29,7 +29,7 @@ export default async function handler(
   res: NextApiResponse<CreateTrackApi>
 ) {
   const session = await getServerSession(req, res, authOptions);
-  if (!session) return res.status(401);
+  if (!session || !session.user?.email) return res.status(401);
 
   const { title, artist, source, duration } = req.body;
   if (!source || !duration) return res.status(400);
@@ -47,7 +47,7 @@ export default async function handler(
         ...trackInfo,
         user: {
           connect: {
-            email: session.user?.email as string | undefined,
+            email: session.user.email,
           },
         },
       },

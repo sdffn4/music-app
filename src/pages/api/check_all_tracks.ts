@@ -15,7 +15,7 @@ export default async function handler(req: Request, res: NextApiResponse) {
 
   const session = await getServerSession(req, res, authOptions);
 
-  if (!session) return res.status(400);
+  if (!session || !session.user?.email) return res.status(400);
 
   try {
     const { subscriptionId } = req.body;
@@ -30,7 +30,7 @@ export default async function handler(req: Request, res: NextApiResponse) {
       },
     });
 
-    if (sub?.user.email !== session.user?.email) return res.status(400);
+    if (sub?.user.email !== session.user.email) return res.status(400);
 
     await prisma.uncheckedTracks.deleteMany({
       where: {

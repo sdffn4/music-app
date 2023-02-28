@@ -23,7 +23,7 @@ export default async function handler(
 
   const session = await getServerSession(req, res, authOptions);
 
-  if (!session) return res.status(403);
+  if (!session || !session.user?.email) return res.status(403);
 
   const { playlistId } = req.body;
 
@@ -41,7 +41,7 @@ export default async function handler(
       },
     });
 
-    if (playlist && playlist.user.email !== session.user?.email) {
+    if (playlist && playlist.user.email !== session.user.email) {
       return res.status(403);
     }
 

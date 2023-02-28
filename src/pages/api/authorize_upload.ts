@@ -26,7 +26,7 @@ export default async function handler(
 
   const session = await getServerSession(req, res, authOptions);
 
-  if (!session) return res.status(403);
+  if (!session || !session.user?.email) return res.status(403);
 
   const cloud_name = process.env.cloud_name as string;
   const api_key = process.env.api_key as string;
