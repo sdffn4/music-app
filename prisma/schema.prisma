@@ -18,7 +18,7 @@ model User {
   tracks        Track[]
   subscriptions Subscription[]
   // NextAuth.js section begin
-  email         String?        @unique
+  email         String         @unique
   emailVerified DateTime?
   accounts      Account[]
   sessions      Session[]
