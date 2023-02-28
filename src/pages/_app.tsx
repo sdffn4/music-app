@@ -86,7 +86,10 @@ const BottomNavigation: React.FC = () => {
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  const [volume, setVolume] = useState(20);
   const [currentTime, setCurrentTime] = useState(0);
+
+  if (audioRef.current) audioRef.current.volume = volume / 100;
 
   const { isPlaying, setIsPlaying, queue, skipBackward, skipForward } =
     usePlayerStore((state) => state);
@@ -101,6 +104,13 @@ const BottomNavigation: React.FC = () => {
     }
   }, [isPlaying]);
 
+  const onVolumeChange = (value: number) => {
+    if (audioRef.current) {
+      audioRef.current.volume = value / 100;
+      setVolume(value);
+    }
+  };
+
   const hasPreviousTrack = Boolean(queue.instances[queue.index - 1]);
   const hasNextTrack = Boolean(queue.instances[queue.index + 1]);
 
@@ -109,7 +119,6 @@ const BottomNavigation: React.FC = () => {
       <Range
         size="xs"
         color="primary"
-        className="rounded-none"
         value={currentTime}
         max={Math.round(currentTrack?.duration ?? 0)}
         onChange={(e) => {
@@ -152,6 +161,8 @@ const BottomNavigation: React.FC = () => {
           hasNextTrack={hasNextTrack}
           play={() => setIsPlaying(true)}
           pause={() => setIsPlaying(false)}
+          volume={volume}
+          onVolumeChange={onVolumeChange}
           skipBackward={skipBackward}
           skipForward={skipForward}
         />

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Button } from "react-daisyui";
+import { Button, Range } from "react-daisyui";
 import {
   PauseIcon,
   PlayIcon,
@@ -20,6 +20,9 @@ interface PlayerProps {
   play: () => void;
   pause: () => void;
 
+  volume: number;
+  onVolumeChange: (value: number) => void;
+
   skipBackward: () => void;
   skipForward: () => void;
 }
@@ -33,6 +36,8 @@ const Player: React.FC<PlayerProps> = ({
   hasNextTrack,
   play,
   pause,
+  volume,
+  onVolumeChange,
   skipBackward,
   skipForward,
 }) => {
@@ -52,7 +57,7 @@ const Player: React.FC<PlayerProps> = ({
 
         <div className="flex space-x-2 mr-4">
           <Button
-            size="sm"
+            size="xs"
             color="primary"
             disabled={!hasPreviousTrack}
             onClick={skipBackward}
@@ -62,7 +67,7 @@ const Player: React.FC<PlayerProps> = ({
 
           {isPlaying ? (
             <Button
-              size="sm"
+              size="xs"
               color="primary"
               disabled={!hasCurrentTrack}
               onClick={pause}
@@ -71,7 +76,7 @@ const Player: React.FC<PlayerProps> = ({
             </Button>
           ) : (
             <Button
-              size="sm"
+              size="xs"
               color="primary"
               disabled={!hasCurrentTrack}
               onClick={play}
@@ -81,13 +86,23 @@ const Player: React.FC<PlayerProps> = ({
           )}
 
           <Button
-            size="sm"
+            size="xs"
             color="primary"
             disabled={!hasNextTrack}
             onClick={skipForward}
           >
             <SkipForwardIcon />
           </Button>
+        </div>
+
+        <div className="hidden sm:block">
+          <Range
+            size="xs"
+            color="primary"
+            value={volume}
+            max={100}
+            onChange={(e) => onVolumeChange(+e.target.value)}
+          />
         </div>
       </div>
     </>
