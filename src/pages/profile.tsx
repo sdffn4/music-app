@@ -25,7 +25,7 @@ export default function Profile() {
 
   if (sessionStatus === "loading") {
     return (
-      <div className="min-h-page flex h-full justify-center items-center">
+      <div className="min-h-page flex justify-center items-center">
         Loading...
       </div>
     );
@@ -33,7 +33,7 @@ export default function Profile() {
 
   if (sessionStatus === "authenticated") {
     return (
-      <div className="min-h-page flex flex-col h-full justify-center items-center space-y-4">
+      <div className="min-h-page flex flex-col justify-center items-center space-y-4">
         <p>Username: {session.user?.name}</p>
         <Button onClick={signOut}>Sign out</Button>
       </div>
@@ -41,7 +41,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-page flex flex-col h-full justify-center items-center space-y-4">
+    <div className="min-h-page flex flex-col justify-center items-center space-y-4">
       <Input
         type="email"
         placeholder="Enter your email"

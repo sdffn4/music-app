@@ -89,7 +89,11 @@ export default function Uploads() {
   }
 
   if (session.status === "loading" || isUploadsLoading) {
-    return <div className="min-h-page">Loading...</div>;
+    return (
+      <div className="min-h-page flex justify-center items-center">
+        Loading...
+      </div>
+    );
   }
 
   return (
