@@ -5,26 +5,27 @@ import type {
   InferGetStaticPropsType,
 } from "next";
 
-import useLibrary from "@/hooks/react-query/useLibrary";
-import useSubscribe from "@/hooks/react-query/useSubscribe";
-import useUnsubscribe from "@/hooks/react-query/useUnsubscribe";
-import useRemoveTracks from "@/hooks/react-query/useRemoveTracks";
+import useUnmount from "@/hooks/useUnmount";
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 
 import usePlayerStore from "@/store";
 
-import Track from "@/components/Track";
-import { Button, Card } from "react-daisyui";
-import { GoBackIcon } from "@/components/icons";
-
-import prisma from "../../lib/prismadb";
-
-import axios from "axios";
-import { v4 as uuidv4 } from "uuid";
-import useUnmount from "@/hooks/useUnmount";
+import useLibrary from "@/hooks/react-query/useLibrary";
+import useSubscribe from "@/hooks/react-query/useSubscribe";
+import useUnsubscribe from "@/hooks/react-query/useUnsubscribe";
+import useRemoveTracks from "@/hooks/react-query/useRemoveTracks";
 import useCheckAllTracks from "@/hooks/react-query/useCheckAllTracks";
+
+import Image from "next/image";
+import Track from "@/components/Track";
+import { Button } from "react-daisyui";
+
+import { v4 as uuidv4 } from "uuid";
+import prisma from "../../lib/prismadb";
+import useAddTrack from "@/hooks/react-query/useAddTrack";
+import TrackDropdown from "@/components/TrackDropdown";
 
 export const getStaticPaths: GetStaticPaths = async () => {
   return {
@@ -36,7 +37,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps = async (ctx: GetStaticPropsContext) => {
   const { playlistId } = ctx.params as { playlistId: string };
 
-  const response = await prisma.playlist.findUnique({
+  const resp = await prisma.playlist.findUnique({
     where: {
       id: playlistId,
     },
@@ -58,56 +59,60 @@ export const getStaticProps = async (ctx: GetStaticPropsContext) => {
     },
   });
 
+  if (!resp)
+    return {
+      notFound: true,
+    };
+
   return {
     props: {
-      playlistId: response?.id,
-      title: response?.title,
-      duration: response?.duration,
-      cover: response?.cover,
-      user: response?.user,
-      tracks: response?.tracks.map((track) => ({
-        ...track.track,
-      })),
+      playlist: {
+        ...resp,
+        tracks: resp.tracks.map((track) => ({ ...track.track })),
+      },
     },
   };
 };
 
 export default function Playlist({
-  playlistId,
-  cover,
-  title,
-  duration,
-  tracks,
-  user,
+  playlist,
 }: InferGetStaticPropsType<typeof getStaticProps>) {
   const session = useSession();
-  const isOwner = session.data?.user?.email === user?.email;
+  const isSessionUserOwner = playlist.user.email === session.data?.user?.email;
 
   const { data: library, isLoading: isLibraryLoading } = useLibrary();
 
   const subscription = library?.subscriptions
-    .filter((subscription) => subscription.playlist.id === playlistId)
+    .filter((subscription) => subscription.playlist.id === playlist.id)
     .pop();
 
-  const isSubscribed = Boolean(subscription);
+  const isSessionUserSubscribed = Boolean(subscription);
+
+  const { mutate: mutateAdd } = useAddTrack();
 
   const { mutate: mutateRemove } = useRemoveTracks();
 
   const { mutate: checkAllTracks } = useCheckAllTracks();
 
-  const [tracksToRemove, setTracksToRemove] = useState<string[]>([]);
+  const { mutate: mutateSubscription, isLoading: isSubscriptionLoading } =
+    useSubscribe();
 
-  const makeTrackReadyToRemove = (trackId: string) => {
-    setTracksToRemove((previous) => [...previous, trackId]);
+  const { mutate: mutateUnsubscription, isLoading: isUnsubscriptionLoading } =
+    useUnsubscribe();
+
+  const [stagedTracks, setStagedTracks] = useState<string[]>([]);
+
+  const stageTrack = (trackId: string) => {
+    setStagedTracks((previous) => [...previous, trackId]);
   };
 
   const restoreTrack = (trackId: string) => {
-    setTracksToRemove((previous) => previous.filter((id) => id !== trackId));
+    setStagedTracks((previous) => previous.filter((id) => id !== trackId));
   };
 
   useUnmount(() => {
-    if (playlistId && tracksToRemove.length > 0) {
-      mutateRemove({ playlistId, tracks: tracksToRemove });
+    if (stagedTracks.length > 0) {
+      mutateRemove({ playlistId: playlist.id, tracks: stagedTracks });
     }
   });
 
@@ -117,14 +122,9 @@ export default function Playlist({
     }
   }, [subscription, checkAllTracks]);
 
-  const { mutate: mutateSubscription, isLoading: isSubscriptionLoading } =
-    useSubscribe();
-  const { mutate: mutateUnsubscription, isLoading: isUnsubscriptionLoading } =
-    useUnsubscribe();
+  const { isPlaying, setIsPlaying, queue, setQueue, addToQueue } =
+    usePlayerStore((state) => state);
 
-  const { isPlaying, setIsPlaying, queue, setQueue } = usePlayerStore(
-    (state) => state
-  );
   const currentTrack = queue.instances[queue.index]?.track;
 
   const play = (track: TrackType, index: number) => {
@@ -142,17 +142,18 @@ export default function Playlist({
       setIsPlaying(true);
     }
 
-    if (clickedOnNotCurrentTrack && tracks) {
-      setQueue(index, tracks);
+    if (clickedOnNotCurrentTrack && playlist.tracks) {
+      setQueue(index, playlist.tracks);
       setIsPlaying(true);
     }
   };
 
   const subscribe = () => {
-    if (playlistId) {
-      const id = uuidv4();
-      mutateSubscription({ id, playlistId, title: title ?? "" });
-    }
+    mutateSubscription({
+      id: uuidv4(),
+      playlistId: playlist.id,
+      title: playlist.title,
+    });
   };
 
   const unsubscribe = () => {
@@ -161,143 +162,96 @@ export default function Playlist({
     }
   };
 
-  return (
-    <div className="min-h-page divide-y divide-primary">
-      <PlaylistHeader
-        src={cover ?? ""}
-        title={title ?? ""}
-        duration={duration ?? -1}
-        tracksCount={tracks ? tracks.length : -1}
-        actions={
-          <div>
-            {/* GENERAL PLAYLIST ACTIONS */}
+  const addTrackToPlaylist = (playlistId: string, trackId: string) => {
+    mutateAdd({ playlistId, trackId });
+  };
 
-            {/* USER-DEPENDENT PLAYLIST ACTIONS*/}
-            {isOwner ? (
-              <div></div>
-            ) : (
-              <div>
-                {isSubscribed ? (
-                  <Button
-                    color="primary"
-                    size="sm"
-                    loading={isSubscriptionLoading || isUnsubscriptionLoading}
-                    disabled={
-                      isSubscriptionLoading ||
-                      isUnsubscriptionLoading ||
-                      isLibraryLoading
-                    }
-                    onClick={unsubscribe}
-                  >
-                    Unsubscribe
-                  </Button>
-                ) : (
-                  <Button
-                    color="primary"
-                    size="sm"
-                    loading={isSubscriptionLoading || isUnsubscriptionLoading}
-                    disabled={
-                      isSubscriptionLoading ||
-                      isUnsubscriptionLoading ||
-                      isLibraryLoading
-                    }
-                    onClick={subscribe}
-                  >
-                    Subscribe
-                  </Button>
-                )}
-              </div>
+  const removeTrackFromPlaylist = (playlistId: string, trackId: string) => {
+    if (playlist.id === playlistId) {
+      stageTrack(trackId);
+    } else {
+      mutateRemove({ playlistId, tracks: [trackId] });
+    }
+  };
+
+  return (
+    <div className="min-h-page divide-y divide-primary divide-opacity-60">
+      <div className="sm:flex p-4 pb-0 sm:pb-4 text-center sm:text-start">
+        <div className="relative w-44 h-44 border border-primary border-opacity-80 m-auto sm:m-0">
+          <Image
+            alt="cover"
+            src={playlist.cover ? playlist.cover : "/vercel.svg"}
+            fill
+          />
+        </div>
+
+        <div className="flex flex-col justify-evenly px-6">
+          <div className="pt-3">
+            <h3 className="font-semibold text-lg truncate">{playlist.title}</h3>
+
+            <p className="truncate">
+              {playlist.tracks.length}{" "}
+              {`track${playlist.tracks.length !== 1 ? "s" : ""}`} •{" "}
+              {playlist.duration}{" "}
+              {`minute${playlist.duration !== 1 ? "s" : ""}`}
+            </p>
+          </div>
+
+          <div className="my-4">
+            {isSessionUserOwner ? null : (
+              <Button
+                size="sm"
+                color="primary"
+                loading={isSubscriptionLoading || isUnsubscriptionLoading}
+                disabled={
+                  isSubscriptionLoading ||
+                  isUnsubscriptionLoading ||
+                  isLibraryLoading
+                }
+                onClick={isSessionUserSubscribed ? unsubscribe : subscribe}
+              >
+                {isSessionUserSubscribed ? "Unsubscribe" : "Subscribe"}
+              </Button>
             )}
           </div>
-        }
-      />
+        </div>
+      </div>
 
-      <div className="divide-y divide-primary divide-opacity-30">
-        {tracks && tracks.length > 0 ? (
-          tracks.map((track, index) => {
+      {playlist.tracks.length > 0 ? (
+        <div className="divide-y divide-primary divide-opacity-30">
+          {playlist.tracks.map((track, index) => {
             const isActive = track.id === currentTrack?.id && isPlaying;
-            const isTrackReadyToRemove = tracksToRemove.includes(track.id);
+            const isStaged = stagedTracks.includes(track.id);
 
-            return isTrackReadyToRemove ? (
-              <div
-                key={track.id}
-                className="flex justify-between items-center rounded py-1"
-              >
-                <div className="flex">
-                  <p className="opacity-30 text-sm self-center text-center w-8 m-2 truncate">
-                    {index}
-                  </p>
-
-                  <div className="w-96 opacity-40">
-                    <p className={`truncate ${isActive ? "font-bold" : null}`}>
-                      {track.title}
-                    </p>
-                    <p className="truncate text-sm">{track.artist}</p>
-                  </div>
-                </div>
-
-                <Button
-                  className="mx-10"
-                  color="secondary"
-                  size="xs"
-                  onClick={() => restoreTrack(track.id)}
-                >
-                  <GoBackIcon />
-                </Button>
-              </div>
-            ) : (
+            return (
               <Track
                 key={track.id}
                 index={index}
-                isActive={isActive}
                 track={track}
+                isStaged={isStaged}
+                isActive={isActive}
+                restore={() => restoreTrack(track.id)}
                 onClick={() => play(track, index)}
-                onRemove={makeTrackReadyToRemove}
+                dropdown={
+                  <TrackDropdown
+                    trackId={track.id}
+                    playlists={library ? library.playlists : []}
+                    addToQueue={() => addToQueue(track)}
+                    addTrackToPlaylist={(playlistId) =>
+                      addTrackToPlaylist(playlistId, track.id)
+                    }
+                    removeTrackFromPlaylist={(playlistId) =>
+                      removeTrackFromPlaylist(playlistId, track.id)
+                    }
+                  />
+                }
               />
             );
-          })
-        ) : (
-          <div className="flex flex-col justify-center items-center h-full">
-            The playlist is empty.
-          </div>
-        )}
-      </div>
+          })}
+        </div>
+      ) : (
+        <div className="text-center text-lg p-4">This playlist is empty.</div>
+      )}
     </div>
   );
 }
-
-interface PlaylistHeaderProps {
-  src: string;
-  title: string;
-  duration: number;
-  tracksCount: number;
-  actions: React.ReactNode;
-}
-
-const PlaylistHeader: React.FC<PlaylistHeaderProps> = ({
-  src,
-  title,
-  duration,
-  tracksCount,
-  actions,
-}) => {
-  return (
-    <Card side="sm">
-      <Card.Image
-        className="w-48 h-48 object-contain border border-primary m-3"
-        src={src ? src : "/vercel.svg"}
-        alt="cover"
-      />
-
-      <Card.Body className="flex justify-center items-center sm:items-start">
-        <Card.Title>{title}</Card.Title>
-
-        <p>
-          {duration} mins • {tracksCount} tracks
-        </p>
-
-        <Card.Actions>{actions}</Card.Actions>
-      </Card.Body>
-    </Card>
-  );
-};
