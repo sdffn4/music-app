@@ -1,8 +1,13 @@
 import "@/styles/globals.css";
-import { useEffect, useRef, useState } from "react";
-import { SessionProvider } from "next-auth/react";
 
 import type { AppProps } from "next/app";
+
+import { useRouter } from "next/router";
+import { useEffect, useRef, useState } from "react";
+import usePlayerStore from "@/store";
+
+import Link from "next/link";
+import { SessionProvider } from "next-auth/react";
 
 import {
   QueryClient,
@@ -10,8 +15,6 @@ import {
   Hydrate,
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-
-import { Button, Theme } from "react-daisyui";
 
 import {
   HomeIconActive,
@@ -25,16 +28,9 @@ import {
   UserIconActive,
   UserIconPassive,
 } from "../components/icons/menu";
-import Link from "next/link";
-import { useRouter } from "next/router";
-import usePlayerStore from "@/store";
-import Image from "next/image";
-import {
-  PauseIcon,
-  PlayIcon,
-  SkipBackwardIcon,
-  SkipForwardIcon,
-} from "@/components/icons/player";
+
+import { Range, Theme } from "react-daisyui";
+import Player from "@/components/Player";
 
 export default function App({
   Component,
@@ -88,10 +84,77 @@ const menuButtons = [
 const BottomNavigation: React.FC = () => {
   const { pathname } = useRouter();
 
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const [currentTime, setCurrentTime] = useState(0);
+
+  const { isPlaying, setIsPlaying, queue, skipBackward, skipForward } =
+    usePlayerStore((state) => state);
+
+  const currentInstance = queue.instances[queue.index];
+  const currentTrack = currentInstance?.track;
+
+  useEffect(() => {
+    if (audioRef.current) {
+      if (isPlaying) audioRef.current.play();
+      else audioRef.current.pause();
+    }
+  }, [isPlaying]);
+
+  const hasPreviousTrack = Boolean(queue.instances[queue.index - 1]);
+  const hasNextTrack = Boolean(queue.instances[queue.index + 1]);
+
   return (
     <div className="h-btm-nav flex flex-col sticky bottom-0 bg-base-100 bg-opacity-70 backdrop-blur-lg divide-y divide-neutral divide-opacity-10">
+      <Range
+        size="xs"
+        color="primary"
+        className="rounded-none"
+        value={currentTime}
+        max={Math.round(currentTrack?.duration ?? 0)}
+        onChange={(e) => {
+          if (audioRef.current) {
+            audioRef.current.currentTime = +e.target.value;
+            setCurrentTime(+e.target.value);
+          }
+        }}
+      />
+
       <div className="flex basis-1/2 justify-between">
-        <Player />
+        <audio
+          ref={audioRef}
+          src={currentTrack?.source}
+          onEmptied={() => {
+            if (audioRef.current) {
+              audioRef.current.currentTime = 0;
+              setCurrentTime(0);
+
+              if (isPlaying) audioRef.current.play();
+              else audioRef.current.pause();
+            }
+          }}
+          onTimeUpdate={() => {
+            if (audioRef.current) {
+              const thisCurrentTime = Math.round(audioRef.current.currentTime);
+              if (currentTime !== thisCurrentTime)
+                setCurrentTime(thisCurrentTime);
+            }
+          }}
+          onEnded={hasNextTrack ? skipForward : undefined}
+        />
+
+        <Player
+          title={currentTrack?.title}
+          artist={currentTrack?.artist}
+          isPlaying={isPlaying}
+          hasCurrentTrack={Boolean(currentTrack)}
+          hasPreviousTrack={hasPreviousTrack}
+          hasNextTrack={hasNextTrack}
+          play={() => setIsPlaying(true)}
+          pause={() => setIsPlaying(false)}
+          skipBackward={skipBackward}
+          skipForward={skipForward}
+        />
       </div>
 
       <div className="flex basis-1/2 justify-between items-center">
@@ -106,85 +169,5 @@ const BottomNavigation: React.FC = () => {
         ))}
       </div>
     </div>
-  );
-};
-
-const Player: React.FC = () => {
-  const audioRef = useRef<HTMLAudioElement>(null);
-
-  const { isPlaying, setIsPlaying, queue, skipBackward, skipForward } =
-    usePlayerStore((state) => state);
-
-  const currentInstance = queue.instances[queue.index];
-  const currentTrack = currentInstance?.track;
-
-  const hasPreviousTrack = queue.instances[queue.index - 1];
-  const hasNextTrack = queue.instances[queue.index + 1];
-
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-
-      if (isPlaying) audioRef.current.play();
-      else audioRef.current.pause();
-    }
-  }, [currentInstance?.id]);
-
-  useEffect(() => {
-    if (audioRef.current) {
-      if (isPlaying) audioRef.current.play();
-      else audioRef.current.pause();
-    }
-  }, [isPlaying]);
-
-  const play = () => {
-    setIsPlaying(true);
-  };
-
-  const pause = () => {
-    setIsPlaying(false);
-  };
-
-  return (
-    <>
-      <audio
-        ref={audioRef}
-        src={currentTrack?.source}
-        onEnded={hasNextTrack ? skipForward : undefined}
-      />
-
-      <div className="flex items-center justify-between w-full mx-4">
-        <div className="flex items-center space-x-4 text-sm font-semibold">
-          <div className="relative w-12 h-12">
-            <Image src="/vercel.svg" fill alt="cover" />
-          </div>
-
-          <div className="flex flex-col">
-            <p className="truncate">{currentTrack?.title}</p>
-            <p className="truncate">{currentTrack?.artist}</p>
-          </div>
-        </div>
-
-        <div className="flex space-x-2 mr-4">
-          <Button size="sm" disabled={!hasPreviousTrack} onClick={skipBackward}>
-            <SkipBackwardIcon />
-          </Button>
-
-          {isPlaying ? (
-            <Button size="sm" disabled={!currentTrack} onClick={pause}>
-              <PauseIcon />
-            </Button>
-          ) : (
-            <Button size="sm" disabled={!currentTrack} onClick={play}>
-              <PlayIcon />
-            </Button>
-          )}
-
-          <Button size="sm" disabled={!hasNextTrack} onClick={skipForward}>
-            <SkipForwardIcon />
-          </Button>
-        </div>
-      </div>
-    </>
   );
 };
