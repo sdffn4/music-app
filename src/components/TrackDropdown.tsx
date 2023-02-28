@@ -1,103 +1,82 @@
-import type { TrackType } from "@/types";
-
-import { useRouter } from "next/router";
-
-import usePlayerStore from "@/store";
-
-import useLibrary from "@/hooks/react-query/useLibrary";
-import useAddTrack from "@/hooks/react-query/useAddTrack";
-import useRemoveTrack from "@/hooks/react-query/useRemoveTracks";
-
 import { Alert, Button, Checkbox } from "react-daisyui";
 
 interface TrackDropdownProps {
-  index: number;
-  track: TrackType;
-  onRemove?: (trackId: string) => void;
+  trackId: string;
+
+  playlists: Array<{
+    id: string;
+    title: string;
+    cover: string;
+    tracks: string[];
+  }>;
+
+  addToQueue: () => void;
+  removeFromQueue?: () => void;
+  addTrackToPlaylist: (playlistId: string) => void;
+  removeTrackFromPlaylist: (playlistId: string) => void;
 }
 
 const TrackDropdown: React.FC<TrackDropdownProps> = ({
-  index,
-  track,
-  onRemove,
+  trackId,
+  playlists,
+  addToQueue,
+  removeFromQueue,
+  addTrackToPlaylist,
+  removeTrackFromPlaylist,
 }) => {
-  const { pathname, query } = useRouter();
-
-  const { addToQueue, removeFromQueue } = usePlayerStore((state) => state);
-
-  const { data: library } = useLibrary();
-  const { mutate: mutateAdd } = useAddTrack();
-  const { mutate: mutateRemove } = useRemoveTrack();
-
-  const addToPlaylist = (playlistId: string) => {
-    mutateAdd({ playlistId, trackId: track.id });
-  };
-
-  const removeFromPlaylist = (playlistId: string) => {
-    if (onRemove && query.playlistId === playlistId) {
-      onRemove(track.id);
-    } else {
-      mutateRemove({ playlistId, tracks: [track.id] });
-    }
-  };
-
   return (
-    <div className="divide-y divide-neutral space-y-2 w-full">
-      <div className="flex flex-col justify-center items-center space-y-2">
+    <div className="divide-y divide-primary w-full">
+      <div className="text-center">
         <Button
-          className="w-full"
           size="xs"
           color="primary"
-          onClick={() => addToQueue(track)}
+          className="my-2 w-full"
+          onClick={addToQueue}
         >
-          Add to queue
+          add to queue
         </Button>
 
-        {pathname === "/queue" ? (
+        {removeFromQueue ? (
           <Button
-            className="w-full"
             size="xs"
             color="primary"
-            onClick={() => removeFromQueue(index)}
+            className="my-2 w-full"
+            onClick={removeFromQueue}
           >
-            Remove from queue
+            remove from queue
           </Button>
         ) : null}
       </div>
 
-      <div className="flex flex-col justify-center items-center space-y-2 pt-2 pb-2">
-        {library && library.playlists.length > 0 ? (
-          library.playlists.map((playlist) => {
-            const isTrackInPlaylist = playlist.tracks.includes(track.id);
+      <div>
+        {playlists.length > 0 ? (
+          playlists.map((playlist) => {
+            const hasTrack = playlist.tracks.includes(trackId);
 
             return (
               <Button
                 key={playlist.id}
-                className="flex justify-between items-center flex-nowrap w-full space-x-3"
                 size="sm"
                 color="primary"
+                className="flex flex-nowrap justify-between items-center w-full my-2 space-x-3"
                 onClick={
-                  isTrackInPlaylist
-                    ? () => removeFromPlaylist(playlist.id)
-                    : () => addToPlaylist(playlist.id)
+                  hasTrack
+                    ? () => removeTrackFromPlaylist(playlist.id)
+                    : () => addTrackToPlaylist(playlist.id)
                 }
               >
                 <Checkbox
                   size="xs"
-                  readOnly
-                  checked={isTrackInPlaylist}
                   color="primary"
+                  readOnly
+                  checked={hasTrack}
                 />
-                <p className="text-sm font-semibold truncate">
-                  {playlist.title}
-                </p>
+                <p className="truncate">{playlist.title}</p>
               </Button>
             );
           })
         ) : (
-          <Alert className="text-sm" icon={alertIcon}>
-            You have no playlists.
-          </Alert>
+          <Alert icon={alertIcon}>You have no playlists.</Alert>
         )}
       </div>
     </div>

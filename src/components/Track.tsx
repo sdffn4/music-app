@@ -1,49 +1,71 @@
 import type { TrackType } from "@/types";
 
-import { Dropdown } from "react-daisyui";
+import { Button, Dropdown } from "react-daisyui";
 
-import { EllipsisIcon } from "./icons";
-import TrackDropdown from "./TrackDropdown";
+import { EllipsisIcon, GoBackIcon } from "./icons";
 
 interface TrackProps {
   index: number;
   track: TrackType;
   isActive: boolean;
   onClick: () => void;
-  onRemove?: (trackId: string) => void;
+  isStaged?: boolean;
+  restore?: () => void;
+  dropdown: React.ReactNode;
 }
 
 const Track: React.FC<TrackProps> = ({
   index,
   track,
+  isStaged = false,
   isActive,
   onClick,
-  onRemove,
+  restore,
+  dropdown,
 }) => {
   return (
     <div className="flex justify-between items-center rounded py-1">
-      <div className="flex hover:cursor-pointer" onClick={onClick}>
-        <p className="opacity-60 text-sm self-center text-center w-8 m-2 truncate">
-          {index}
-        </p>
+      <div
+        className={`w-full truncate flex ${
+          isStaged ? null : "hover:cursor-pointer"
+        }`}
+        onClick={onClick}
+      >
+        <div
+          className={`opacity-${
+            isStaged ? 30 : 60
+          } text-xs self-center text-center`}
+        >
+          <p className="truncate w-8 mx-2">{index + 1}</p>
+        </div>
 
-        <div className="w-96">
+        <div className={`truncate ${isStaged ? "opacity-40" : null}`}>
           <p className={`truncate ${isActive ? "font-bold" : null}`}>
             {track.title}
           </p>
-          <p className="truncate text-sm">{track.artist}</p>
+          <p
+            className={`text-sm truncate ${isActive ? "font-semibold" : null}`}
+          >
+            {track.artist}
+          </p>
         </div>
       </div>
 
-      <Dropdown className="mx-10" horizontal="left" vertical="middle">
-        <Dropdown.Toggle size="xs" color="primary">
-          <EllipsisIcon />
-        </Dropdown.Toggle>
+      <div className="mx-10">
+        {isStaged ? (
+          <Button size="xs" color="secondary" onClick={restore}>
+            <GoBackIcon />
+          </Button>
+        ) : (
+          <Dropdown horizontal="left" vertical="middle">
+            <Dropdown.Toggle size="xs" color="primary">
+              <EllipsisIcon />
+            </Dropdown.Toggle>
 
-        <Dropdown.Menu className="w-52 m-1">
-          <TrackDropdown index={index} track={track} onRemove={onRemove} />
-        </Dropdown.Menu>
-      </Dropdown>
+            <Dropdown.Menu className="w-52 m-1">{dropdown}</Dropdown.Menu>
+          </Dropdown>
+        )}
+      </div>
     </div>
   );
 };
