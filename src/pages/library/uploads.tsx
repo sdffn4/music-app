@@ -1,88 +1,44 @@
-import type {
-  GetServerSidePropsContext,
-  InferGetServerSidePropsType,
-} from "next";
-import type { TrackType } from "@/types";
-import type { UploadApiResponse } from "cloudinary";
-import type { AuthorizeUploadApi } from "../api/authorize_upload";
-
-import axios, { AxiosError } from "axios";
-import { CreateTrackApi } from "../api/create_track";
-
-import { getServerSession } from "next-auth";
-import { authOptions } from "../api/auth/[...nextauth]";
-import * as musicMetadata from "music-metadata-browser";
-
-import prisma from "../../lib/prismadb";
-
-import { useState } from "react";
 import usePlayerStore from "@/store";
-
+import { TrackType } from "@/types";
 import Track from "@/components/Track";
-import { FileInput, RadialProgress } from "react-daisyui";
-import { CheckboxIcon } from "@/components/icons";
-import Image from "next/image";
+import TrackDropdown from "@/components/TrackDropdown";
+import useLibrary from "@/hooks/react-query/useLibrary";
+import useAddTrack from "@/hooks/react-query/useAddTrack";
+import useRemoveTracks from "@/hooks/react-query/useRemoveTracks";
+import { FileInput } from "react-daisyui";
+import { useCallback, useEffect, useState } from "react";
+import axios from "axios";
+import { AuthorizeUploadApi } from "../api/authorize_upload";
+import { parseBlob } from "music-metadata-browser";
+import { UploadApiResponse } from "cloudinary";
+import { CreateTrackApi } from "../api/create_track";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { GetUploadsApi } from "../api/get_uploads";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/router";
 
-export const getServerSideProps = async ({
-  req,
-  res,
-}: GetServerSidePropsContext) => {
-  const session = await getServerSession(req, res, authOptions);
+export default function Uploads() {
+  const router = useRouter();
+  const session = useSession();
 
-  if (!session) {
-    return {
-      redirect: {
-        destination: "/profile",
-        permanent: false,
-      },
-    };
-  }
-
-  const tracks = await prisma.track.findMany({
-    select: {
-      id: true,
-      title: true,
-      artist: true,
-      source: true,
-      duration: true,
-    },
-    where: {
-      user: {
-        email: session.user?.email,
-      },
-    },
+  const { data: uploads, isLoading: isUploadsLoading } = useQuery({
+    queryKey: ["uploads"],
+    queryFn: async () =>
+      (await axios.get<GetUploadsApi>(`/api/get_uploads`)).data.tracks,
   });
 
-  return {
-    props: {
-      tracks,
-    },
-  };
-};
+  const { data: library } = useLibrary();
 
-type UploadingTrack = {
-  title: string;
-  artist: string;
-  duration: number | undefined;
-  source: string | null;
-  isLoading: boolean;
-  progress: number;
-};
+  const { mutate: mutateAdd } = useAddTrack();
 
-export default function Uploads({
-  tracks,
-}: InferGetServerSidePropsType<typeof getServerSideProps>) {
-  const [uploadingTracks, setUploadingTracks] = useState<{
-    [name: string]: UploadingTrack;
-  }>({});
+  const { mutate: mutateRemove } = useRemoveTracks();
 
-  const { isPlaying, queue, setQueue, setIsPlaying } = usePlayerStore(
-    (state) => state
-  );
+  const { isPlaying, setIsPlaying, queue, setQueue, addToQueue } =
+    usePlayerStore((state) => state);
 
   const currentTrack = queue.instances[queue.index]?.track;
 
-  const play = (index: number, track: TrackType) => {
+  const play = (index: number, track: TrackType, tracks: TrackType[]) => {
     const clickedOnCurrentPlayingTrack =
       currentTrack?.id === track.id && isPlaying;
     const clickedOnCurrentNotPlayingTrack =
@@ -103,212 +59,185 @@ export default function Uploads({
     }
   };
 
-  const uploadFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+  const [validFiles, setValidFiles] = useState<File[]>([]);
 
-    /* VALIDATION */
+  const validateFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
 
     if (!files) return;
 
     const validFiles: File[] = [];
 
     for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-
-      if (!file.type.startsWith("audio")) {
-        console.log(`File "${file.name}" is invalid. Skipped.`);
+      if (!files[i].type.startsWith("audio")) {
+        console.log(`File "${files[i].name}" is invalid. Skipped.`);
         continue;
       }
 
-      validFiles.push(file);
-
-      setUploadingTracks((previous) => ({
-        ...previous,
-        [file.name]: {
-          title: "",
-          artist: "",
-          duration: undefined,
-          source: null,
-          isLoading: true,
-          progress: 0,
-        },
-      }));
+      validFiles.push(files[i]);
     }
 
-    if (!validFiles) {
-      e.target.type = "text";
-      e.target.type = "file";
-      return;
-    }
+    if (!validFiles) return;
+    else setValidFiles(validFiles);
 
-    /* SENDING FILES TO THE SERVER */
-
-    try {
-      const signData = (
-        await axios.post<AuthorizeUploadApi>(`/api/authorize_upload`, {
-          folder: "tracks",
-        })
-      ).data;
-
-      const url = `https://api.cloudinary.com/v1_1/${signData.cloud_name}/auto/upload`;
-
-      for (let i = 0; i < validFiles.length; i++) {
-        const file = validFiles[i];
-
-        const formData = new FormData();
-
-        formData.append("file", file);
-        formData.append("api_key", signData.api_key);
-        formData.append("timestamp", signData.timestamp);
-        formData.append("signature", signData.signature);
-        formData.append("folder", "tracks");
-
-        const {
-          common: { title, artist },
-          format: { duration },
-        } = await musicMetadata.parseBlob(file);
-
-        const trackMetadata = {
-          title: title ?? "unknown title",
-          artist: artist ?? "unknown artist",
-          duration: duration ?? 0,
-        };
-
-        setUploadingTracks((previous) => ({
-          ...previous,
-          [file.name]: {
-            ...previous[file.name],
-            ...trackMetadata,
-          },
-        }));
-
-        axios
-          .post<UploadApiResponse>(url, formData, {
-            onUploadProgress: (progressEvent) => {
-              setUploadingTracks((previous) => {
-                if (progressEvent.progress) {
-                  const progress = Math.round(progressEvent.progress * 100);
-
-                  if (progress !== previous[file.name].progress) {
-                    return {
-                      ...previous,
-                      [file.name]: {
-                        ...previous[file.name],
-                        progress: Math.round(progressEvent.progress * 100),
-                      },
-                    };
-                  }
-                }
-
-                return previous;
-              });
-            },
-          })
-          .then(({ data: { secure_url } }) => {
-            setUploadingTracks((previous) => ({
-              ...previous,
-              [file.name]: {
-                ...previous[file.name],
-                source: secure_url,
-              },
-            }));
-
-            axios
-              .post<CreateTrackApi>(`/api/create_track`, {
-                ...trackMetadata,
-                source: secure_url,
-              })
-              .then((_) => {
-                setUploadingTracks((previous) => ({
-                  ...previous,
-                  [file.name]: {
-                    ...previous[file.name],
-                    isLoading: false,
-                  },
-                }));
-              });
-          });
-      }
-
-      e.target.type = "text";
-      e.target.type = "file";
-    } catch (error) {
-      if (error instanceof AxiosError) {
-        console.log(error.message);
-      } else {
-        console.log(error);
-      }
-    }
+    e.target.type = "text";
+    e.target.type = "file";
   };
+
+  if (session.status === "unauthenticated") {
+    router.push(`/profile`);
+  }
+
+  if (session.status === "loading" || isUploadsLoading) {
+    return <div className="min-h-page">Loading...</div>;
+  }
 
   return (
     <div className="min-h-page">
-      <div className="text-center py-2">
-        <FileInput multiple onChange={uploadFiles} bordered />
+      <div className="text-center p-5">
+        <FileInput bordered multiple color="primary" onChange={validateFiles} />
       </div>
 
-      <div className="flex flex-col divide-y divide-white divide-opacity-10 mx-6">
-        {Object.entries(uploadingTracks).map(([fileName, track]) => (
-          <UploadingTrack key={fileName} fileName={fileName} track={track} />
+      <div>
+        {validFiles.map((file) => (
+          <Upload key={file.name} file={file} />
         ))}
+      </div>
 
-        {tracks ? (
-          tracks.map((track, index) => (
-            <Track
-              key={track.id}
-              track={track}
-              index={index}
-              onClick={() => play(index, track)}
-              isActive={track.id === currentTrack?.id && isPlaying}
-            />
-          ))
+      <div>
+        {uploads && uploads.length > 0 ? (
+          uploads.map((track, index) => {
+            const isActive = currentTrack?.id === track.id && isPlaying;
+
+            return (
+              <Track
+                key={track.id}
+                index={index}
+                track={track}
+                isActive={isActive}
+                onClick={() => play(index, track, uploads)}
+                dropdown={
+                  <TrackDropdown
+                    trackId={track.id}
+                    playlists={library ? library.playlists : []}
+                    addToQueue={() => addToQueue(track)}
+                    addTrackToPlaylist={(playlistId) =>
+                      mutateAdd({ playlistId, trackId: track.id })
+                    }
+                    removeTrackFromPlaylist={(playlistId) =>
+                      mutateRemove({ playlistId, tracks: [track.id] })
+                    }
+                  />
+                }
+              />
+            );
+          })
         ) : (
-          <div>You have no uploaded tracks</div>
+          <div>You have no uploaded tracks.</div>
         )}
       </div>
     </div>
   );
 }
 
-interface UploadingTrackProps {
-  fileName: string;
-  track: UploadingTrack;
+interface UploadProps {
+  file: File;
 }
 
-const UploadingTrack: React.FC<UploadingTrackProps> = ({ fileName, track }) => {
+const Upload: React.FC<UploadProps> = ({ file }) => {
+  const [title, setTitle] = useState("");
+  const [artist, setArtist] = useState("");
+  const [duration, setDuration] = useState(0);
+  const [source, setSource] = useState<string>("");
+
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  const queryClient = useQueryClient();
+
+  const { mutate: mutateCreate } = useMutation({
+    mutationFn: async (args: {
+      title: string;
+      artist: string;
+      duration: number;
+      source: string;
+    }) => (await axios.post<CreateTrackApi>(`/api/create_track`, args)).data,
+  });
+
+  const { mutate: mutateUpload } = useMutation({
+    mutationFn: async (args: {
+      url: string;
+      formData: FormData;
+      setUploadProgress: (progress: number) => void;
+      trackInfo: { title: string; artist: string; duration: number };
+    }) =>
+      (
+        await axios.post<UploadApiResponse>(args.url, args.formData, {
+          onUploadProgress: (evt) => {
+            if (evt.progress) {
+              const evtProgress = Math.round(evt.progress * 100);
+              if (uploadProgress !== evtProgress)
+                setUploadProgress(evtProgress);
+            }
+          },
+        })
+      ).data,
+    onSuccess: ({ secure_url }, { trackInfo }) => {
+      setSource(secure_url);
+
+      queryClient.invalidateQueries({ queryKey: ["uploads"] });
+
+      mutateCreate({ ...trackInfo, source: secure_url });
+    },
+  });
+
+  const uploadTrack = useCallback(async () => {
+    const signData = (
+      await axios.post<AuthorizeUploadApi>(`/api/authorize_upload`, {
+        folder: "tracks",
+      })
+    ).data;
+
+    const url = `https://api.cloudinary.com/v1_1/${signData.cloud_name}/auto/upload`;
+
+    const formData = new FormData();
+
+    formData.append("file", file);
+    formData.append("api_key", signData.api_key);
+    formData.append("timestamp", signData.timestamp);
+    formData.append("signature", signData.signature);
+    formData.append("folder", "tracks");
+
+    parseBlob(file).then(
+      ({ common: { title, artist }, format: { duration } }) => {
+        if (title && artist && duration) {
+          setTitle(title);
+          setArtist(artist);
+          setDuration(duration);
+          mutateUpload({
+            url,
+            formData,
+            setUploadProgress,
+            trackInfo: { title, artist, duration },
+          });
+        }
+      }
+    );
+  }, [file, mutateUpload]);
+
+  useEffect(() => {
+    uploadTrack();
+  }, [uploadTrack]);
+
   return (
-    <div
-      key={fileName}
-      className="flex justify-between items-center h-20 m-2 w-full"
-    >
-      <div className="flex items-center">
-        <div className="relative w-20 h-20 border-black border-2">
-          <Image src="/vercel.svg" alt="cover" fill></Image>
-        </div>
-
-        <div className="flex flex-col px-4 space-y-1 text-sm">
-          <p>{track.title}</p>
-          <p>{track.artist}</p>
-          <p>{fileName}</p>
-        </div>
+    <div className={`w-full truncate flex py-1 hover:cursor-not-allowed`}>
+      <div className={`opacity-80 text-xs self-center text-center`}>
+        <p className="truncate w-8 mx-2">{uploadProgress}</p>
       </div>
-
-      <RadialProgress
-        className="mx-4"
-        value={track.progress}
-        size="3rem"
-        thickness="2px"
-      >
-        {track.isLoading ? (
-          track.progress === 100 ? (
-            "99%"
-          ) : (
-            `${track.progress}%`
-          )
-        ) : (
-          <CheckboxIcon />
-        )}
-      </RadialProgress>
+      <div className={`truncate`}>
+        <p className={`truncate`}>{title}</p>
+        <p className={`text-sm truncate`}>{artist}</p>
+        <p className={`pt-1 text-xs truncate`}>{file.name}</p>
+      </div>
     </div>
   );
 };
