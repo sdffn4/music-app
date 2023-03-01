@@ -41,6 +41,7 @@ export const getStaticProps = async (ctx: GetStaticPropsContext) => {
     where: {
       id: playlistId,
     },
+
     select: {
       id: true,
       title: true,
@@ -52,8 +53,16 @@ export const getStaticProps = async (ctx: GetStaticPropsContext) => {
         },
       },
       tracks: {
-        include: {
-          track: true,
+        select: {
+          track: {
+            select: {
+              id: true,
+              title: true,
+              artist: true,
+              duration: true,
+              source: true,
+            },
+          },
         },
       },
     },
