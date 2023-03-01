@@ -17,12 +17,16 @@ model User {
   playlists     Playlist[]
   tracks        Track[]
   subscriptions Subscription[]
+
   // NextAuth.js section begin
-  email         String         @unique
+  email         String    @unique
   emailVerified DateTime?
   accounts      Account[]
   sessions      Session[]
   // NextAuth.js section end
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Playlist {
@@ -34,6 +38,9 @@ model Playlist {
   userId        String
   tracks        TracksOnPlaylists[]
   subscriptions Subscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Track {
@@ -46,6 +53,9 @@ model Track {
   userId          String
   playlists       TracksOnPlaylists[]
   uncheckedTracks UncheckedTracks[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model TracksOnPlaylists {
@@ -64,6 +74,9 @@ model Subscription {
   playlist        Playlist          @relation(fields: [playlistId], references: [id], onDelete: Cascade)
   playlistId      String
   uncheckedTracks UncheckedTracks[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model UncheckedTracks {
@@ -76,6 +89,7 @@ model UncheckedTracks {
 }
 
 // NextAuth.js section begin
+
 model Account {
   id                String  @id @default(cuid())
   userId            String
