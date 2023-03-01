@@ -104,6 +104,18 @@ const BottomNavigation: React.FC = () => {
     }
   }, [isPlaying]);
 
+  const onVolumeClick = () => {
+    if (audioRef.current) {
+      if (audioRef.current.volume === 0) {
+        audioRef.current.volume = 0.25;
+        setVolume(25);
+      } else {
+        audioRef.current.volume = 0;
+        setVolume(0);
+      }
+    }
+  };
+
   const onVolumeChange = (value: number) => {
     if (audioRef.current) {
       audioRef.current.volume = value / 100;
@@ -162,6 +174,7 @@ const BottomNavigation: React.FC = () => {
           play={() => setIsPlaying(true)}
           pause={() => setIsPlaying(false)}
           volume={volume}
+          onVolumeClick={onVolumeClick}
           onVolumeChange={onVolumeChange}
           skipBackward={skipBackward}
           skipForward={skipForward}

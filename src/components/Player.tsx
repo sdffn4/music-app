@@ -1,10 +1,13 @@
 import Image from "next/image";
-import { Button, Range } from "react-daisyui";
+import { Button, Range, Swap } from "react-daisyui";
 import {
   PauseIcon,
   PlayIcon,
   SkipBackwardIcon,
   SkipForwardIcon,
+  VolumeDownIcon,
+  VolumeMuteIcon,
+  VolumeUpIcon,
 } from "./icons/player";
 
 interface PlayerProps {
@@ -21,6 +24,7 @@ interface PlayerProps {
   pause: () => void;
 
   volume: number;
+  onVolumeClick: () => void;
   onVolumeChange: (value: number) => void;
 
   skipBackward: () => void;
@@ -37,6 +41,7 @@ const Player: React.FC<PlayerProps> = ({
   play,
   pause,
   volume,
+  onVolumeClick,
   onVolumeChange,
   skipBackward,
   skipForward,
@@ -95,7 +100,17 @@ const Player: React.FC<PlayerProps> = ({
           </Button>
         </div>
 
-        <div className="hidden sm:block">
+        <div className="hidden sm:flex sm:items-center sm:space-x-1">
+          <Button size="xs" color="ghost" onClick={onVolumeClick}>
+            {volume === 0 ? (
+              <VolumeMuteIcon />
+            ) : volume > 50 ? (
+              <VolumeUpIcon />
+            ) : (
+              <VolumeDownIcon />
+            )}
+          </Button>
+
           <Range
             size="xs"
             color="primary"
