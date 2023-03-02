@@ -103,57 +103,61 @@ export default function Search() {
         </div>
 
         <div>
-          <div>
-            <Divider color="primary" className="mx-4">
-              <h3 className="text-lg opacity-80">tracks</h3>
-            </Divider>
+          {tracks.length > 0 ? (
             <div>
-              {tracks.map((track, index) => {
-                return (
-                  <Track
-                    key={track.id}
-                    index={index}
-                    isActive={false}
-                    track={track}
-                    onClick={() => play(track, index)}
-                    dropdown={
-                      <TrackDropdown
-                        trackId={track.id}
-                        playlists={library ? library.playlists : []}
-                        addToQueue={() => addToQueue(track)}
-                        addTrackToPlaylist={(playlistId) =>
-                          addTrackToPlaylist(playlistId, track.id)
-                        }
-                        removeTrackFromPlaylist={(playlistId) =>
-                          removeTrackFromPlaylist(playlistId, track.id)
-                        }
-                      />
-                    }
-                  />
-                );
-              })}
+              <Divider color="primary" className="mx-4">
+                <h3 className="text-lg opacity-80">founded tracks</h3>
+              </Divider>
+              <div>
+                {tracks.map((track, index) => {
+                  return (
+                    <Track
+                      key={track.id}
+                      index={index}
+                      isActive={false}
+                      track={track}
+                      onClick={() => play(track, index)}
+                      dropdown={
+                        <TrackDropdown
+                          trackId={track.id}
+                          playlists={library ? library.playlists : []}
+                          addToQueue={() => addToQueue(track)}
+                          addTrackToPlaylist={(playlistId) =>
+                            addTrackToPlaylist(playlistId, track.id)
+                          }
+                          removeTrackFromPlaylist={(playlistId) =>
+                            removeTrackFromPlaylist(playlistId, track.id)
+                          }
+                        />
+                      }
+                    />
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          ) : null}
 
-          <div>
-            <Divider color="primary" className="mx-4">
-              <h3 className="text-lg opacity-80">playlists</h3>
-            </Divider>
+          {playlists.length > 0 ? (
+            <div>
+              <Divider color="primary" className="mx-4">
+                <h3 className="text-lg opacity-80">founded playlists</h3>
+              </Divider>
 
-            <div className="flex flex-wrap justify-center">
-              {playlists.map((playlist) => (
-                <Link key={playlist.id} href={`/playlist/${playlist.id}`}>
-                  <PlaylistCard
-                    title={playlist.title}
-                    cover={playlist.cover}
-                    tracks={playlist.tracks}
-                    duration={playlist.duration}
-                    subscriptions={playlist.subscriptions}
-                  />
-                </Link>
-              ))}
+              <div className="flex flex-wrap justify-center">
+                {playlists.map((playlist) => (
+                  <Link key={playlist.id} href={`/playlist/${playlist.id}`}>
+                    <PlaylistCard
+                      title={playlist.title}
+                      cover={playlist.cover}
+                      tracks={playlist.tracks}
+                      duration={playlist.duration}
+                      subscribers={playlist.subscribers}
+                    />
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : null}
         </div>
       </div>
     </>
