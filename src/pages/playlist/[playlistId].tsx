@@ -65,6 +65,11 @@ export const getStaticProps = async (ctx: GetStaticPropsContext) => {
           },
         },
       },
+      subscriptions: {
+        select: {
+          id: true,
+        },
+      },
     },
   });
 
@@ -195,15 +200,26 @@ export default function Playlist({
         </div>
 
         <div className="flex flex-col justify-evenly px-6">
-          <div className="pt-3">
+          <div className="pt-3 space-y-1">
             <h3 className="font-semibold text-lg truncate">{playlist.title}</h3>
 
-            <p className="truncate">
-              {playlist.tracks.length}{" "}
-              {`track${playlist.tracks.length !== 1 ? "s" : ""}`} •{" "}
-              {playlist.duration}{" "}
-              {`minute${playlist.duration !== 1 ? "s" : ""}`}
-            </p>
+            <div className="truncate">
+              <span>{`${playlist.tracks.length} track${
+                playlist.tracks.length !== 1 ? "s" : ""
+              } `}</span>
+              •
+              <span>
+                {` ${playlist.duration} minute${
+                  playlist.duration !== 1 ? "s" : ""
+                }`}
+              </span>
+            </div>
+
+            <span>
+              {`${playlist.subscriptions.length} subscriber${
+                playlist.subscriptions.length !== 1 ? "s" : ""
+              }`}
+            </span>
           </div>
 
           <div className="my-4">
