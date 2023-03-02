@@ -16,17 +16,48 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GetUploadsApi } from "../api/get_uploads";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../api/auth/[...nextauth]";
+import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
+import prisma from "../../lib/prismadb";
 
-export default function Uploads() {
-  const router = useRouter();
-  const session = useSession();
+export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
+  const session = await getServerSession(ctx.req, ctx.res, authOptions);
 
-  const { data: uploads, isLoading: isUploadsLoading } = useQuery({
-    queryKey: ["uploads"],
-    queryFn: async () =>
-      (await axios.get<GetUploadsApi>(`/api/get_uploads`)).data.tracks,
+  if (!session || !session.user?.email) {
+    return {
+      redirect: "/profile",
+    };
+  }
+
+  const resp = await prisma.track.findMany({
+    where: {
+      user: {
+        email: session.user.email,
+      },
+    },
+    select: {
+      id: true,
+      title: true,
+      artist: true,
+      duration: true,
+      source: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 
+  return {
+    props: {
+      tracks: resp,
+    },
+  };
+};
+
+export default function Uploads({
+  tracks,
+}: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const { data: library } = useLibrary();
 
   const { mutate: mutateAdd } = useAddTrack();
@@ -38,7 +69,7 @@ export default function Uploads() {
 
   const currentTrack = queue.instances[queue.index]?.track;
 
-  const play = (index: number, track: TrackType, tracks: TrackType[]) => {
+  const play = (index: number, track: TrackType) => {
     const clickedOnCurrentPlayingTrack =
       currentTrack?.id === track.id && isPlaying;
     const clickedOnCurrentNotPlayingTrack =
@@ -84,18 +115,6 @@ export default function Uploads() {
     e.target.type = "file";
   };
 
-  if (session.status === "unauthenticated") {
-    router.push(`/profile`);
-  }
-
-  if (session.status === "loading" || isUploadsLoading) {
-    return (
-      <div className="min-h-page flex justify-center items-center">
-        Loading...
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-page">
       <div className="text-center p-5">
@@ -109,8 +128,8 @@ export default function Uploads() {
       </div>
 
       <div>
-        {uploads && uploads.length > 0 ? (
-          uploads.map((track, index) => {
+        {tracks.length > 0 ? (
+          tracks.map((track, index) => {
             const isActive = currentTrack?.id === track.id && isPlaying;
 
             return (
@@ -119,17 +138,25 @@ export default function Uploads() {
                 index={index}
                 track={track}
                 isActive={isActive}
-                onClick={() => play(index, track, uploads)}
+                onClick={() => play(index, track)}
                 dropdown={
                   <TrackDropdown
                     trackId={track.id}
                     playlists={library ? library.playlists : []}
                     addToQueue={() => addToQueue(track)}
                     addTrackToPlaylist={(playlistId) =>
-                      mutateAdd({ playlistId, trackId: track.id })
+                      mutateAdd({
+                        playlistId,
+                        trackId: track.id,
+                        duration: track.duration,
+                      })
                     }
                     removeTrackFromPlaylist={(playlistId) =>
-                      mutateRemove({ playlistId, tracks: [track.id] })
+                      mutateRemove({
+                        playlistId,
+                        tracks: [track.id],
+                        duration: track.duration,
+                      })
                     }
                   />
                 }
