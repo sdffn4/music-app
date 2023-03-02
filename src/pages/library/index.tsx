@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
@@ -10,11 +9,13 @@ import useDeletePlaylist from "@/hooks/react-query/useDeletePlaylist";
 import useUnsubscribe from "@/hooks/react-query/useUnsubscribe";
 
 import { EllipsisIcon } from "@/components/icons";
-import { Badge, Button, Divider, Dropdown } from "react-daisyui";
+import { Button, Divider, Dropdown } from "react-daisyui";
 
 import { v4 as uuidv4 } from "uuid";
 
 import CreatePlaylistModal from "@/components/CreatePlaylistModal";
+import PlaylistCard from "@/components/PlaylistCard";
+import Head from "next/head";
 
 export default function Library() {
   const router = useRouter();
@@ -50,197 +51,129 @@ export default function Library() {
   const [visible, setVisible] = useState<boolean>(false);
   const toggleVisible = () => setVisible((previous) => !previous);
 
-  if (session.status === "loading") {
-    return (
-      <div className="flex justify-center items-center min-h-page">
-        Loading...
-      </div>
-    );
-  }
-
-  if (session.status === "unauthenticated") {
-    return (
-      <div className="flex justify-center items-center min-h-page">
-        You have to sign in to be able to manage your library.
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-page">
-      <div className="flex flex-col">
-        <div
-          onClick={() => router.push(`/library/uploads`)}
-          className="border border-primary rounded-md text-center p-4 m-4 text-lg shadow-lg hover:cursor-pointer"
-        >
-          your uploads
+    <>
+      <Head>
+        <title>Library</title>
+      </Head>
+
+      {session.status === "unauthenticated" ? (
+        <div className="flex justify-center items-center min-h-page">
+          You have to sign in to be able to manage your library.
         </div>
-
-        <Divider
-          color="primary"
-          className="flex w-full justify-center items-center py-6"
-        >
-          <p className="text-lg">your playlists</p>
-
-          <Button color="secondary" size="sm" onClick={toggleVisible}>
-            create
-          </Button>
-        </Divider>
-
-        <CreatePlaylistModal
-          visible={visible}
-          toggleVisible={toggleVisible}
-          isLoading={isCreationLoading}
-          createPlaylist={createPlaylist}
-        />
-
-        <div className="flex gap-4 justify-center flex-wrap sm:flex-col lg:flex-row">
-          {library && library.playlists.length > 0 ? (
-            library.playlists.map((playlist) => (
-              <div
-                onClick={() => router.push(`/playlist/${playlist.id}`)}
-                key={playlist.id}
-                className="flex lg:w-1/3 shadow-lg sm:mx-4 border border-primary border-opacity-40 divide-x divide-primary divide-opacity-40 hover:cursor-pointer"
-              >
-                <div className="w-32 h-32 relative shrink-0">
-                  <Image
-                    fill
-                    src={playlist.cover ? playlist.cover : "/vercel.svg"}
-                    alt="cover"
-                  />
-                </div>
-
-                <div className="hidden sm:flex p-4 items-center justify-between w-full">
-                  <div className="flex flex-col space-y-1">
-                    <h3 className="text-xl font-medium">{playlist.title}</h3>
-                    <p>{`${playlist.tracks.length} track${
-                      playlist.tracks.length === 1 ? "" : "s"
-                    }`}</p>
-                  </div>
-
-                  <PlaylistDropdown>
-                    <Button
-                      color="primary"
-                      size="sm"
-                      disabled={isDeletionLoading}
-                      loading={isDeletionLoading}
-                      onClick={() => deletePlaylist(playlist.id)}
-                    >
-                      Delete
-                    </Button>
-                  </PlaylistDropdown>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="m-4 text-center">
-              You have no playlists. Use the button above to create one.
+      ) : session.status === "loading" ? (
+        <div className="flex justify-center items-center min-h-page">
+          Loading...
+        </div>
+      ) : (
+        <div className="min-h-page">
+          <div className="flex flex-col">
+            <div
+              onClick={() => router.push(`/library/uploads`)}
+              className="border border-primary rounded-md text-center p-4 m-4 text-lg shadow-lg hover:cursor-pointer"
+            >
+              your uploads
             </div>
-          )}
-        </div>
-      </div>
 
-      <div className="flex flex-col">
-        <Divider color="primary" className="py-6 text-lg">
-          your subscriptions
-        </Divider>
+            <Divider
+              color="primary"
+              className="flex w-full justify-center items-center py-6"
+            >
+              <p className="text-lg">your playlists</p>
 
-        <div className="flex gap-4 justify-center flex-wrap sm:flex-col">
-          {library && library.subscriptions.length > 0 ? (
-            library.subscriptions.map((subscription) => (
-              <div
-                key={subscription.id}
-                onClick={() =>
-                  router.push(`/playlist/${subscription.playlist.id}`)
-                }
-                className="flex shadow-lg sm:mx-4 border border-primary border-opacity-40 divide-x divide-primary divide-opacity-40 hover:cursor-pointer"
-              >
-                <div className="w-32 h-32 relative shrink-0">
-                  <Image
-                    fill
-                    src={
-                      subscription.playlist.cover
-                        ? subscription.playlist.cover
-                        : "/vercel.svg"
-                    }
-                    alt="cover"
-                  />
+              <Button color="secondary" size="sm" onClick={toggleVisible}>
+                create
+              </Button>
+            </Divider>
+
+            <CreatePlaylistModal
+              visible={visible}
+              toggleVisible={toggleVisible}
+              isLoading={isCreationLoading}
+              createPlaylist={createPlaylist}
+            />
+
+            <div className="flex flex-wrap justify-center">
+              {library && library.playlists.length > 0 ? (
+                library.playlists.map((playlist) => (
+                  <Link key={playlist.id} href={`/playlist/${playlist.id}`}>
+                    <PlaylistCard
+                      title={playlist.title}
+                      cover={playlist.cover}
+                      duration={playlist.duration}
+                      tracks={playlist.tracks.length}
+                      subscribers={playlist.subscribers}
+                      dropdown={
+                        <PlaylistDropdown>
+                          <Button
+                            color="primary"
+                            size="sm"
+                            disabled={isDeletionLoading}
+                            loading={isDeletionLoading}
+                            onClick={() => deletePlaylist(playlist.id)}
+                          >
+                            Delete
+                          </Button>
+                        </PlaylistDropdown>
+                      }
+                    />
+                  </Link>
+                ))
+              ) : (
+                <div className="m-4 text-center">
+                  You have no playlists. Use the button above to create one.
                 </div>
-
-                <div className="hidden sm:flex p-4 items-center justify-between w-full">
-                  <div className="flex flex-col space-y-1">
-                    <h3 className="text-xl font-medium">
-                      {subscription.playlist.title}
-                    </h3>
-
-                    <div className="flex items-center space-x-2">
-                      <p>
-                        {`${subscription.playlist.tracks.length} track${
-                          subscription.playlist.tracks.length === 1 ? "" : "s"
-                        }`}
-                      </p>
-
-                      {subscription.uncheckedTracks.length > 0 ? (
-                        <Badge
-                          className="font-semibold text-accent-content"
-                          color="primary"
-                        >
-                          +{subscription.uncheckedTracks.length}
-                        </Badge>
-                      ) : null}
-                    </div>
-
-                    {subscription.uncheckedTracks.length > 0 ? <p></p> : null}
-                  </div>
-
-                  <SubscriptionDropdown>
-                    <Button
-                      color="primary"
-                      size="sm"
-                      onClick={() => unsubscribe(subscription.id)}
-                      disabled={isUnsubscriptionLoading}
-                      loading={isUnsubscriptionLoading}
-                    >
-                      Unsubscribe
-                    </Button>
-                  </SubscriptionDropdown>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="m-4 text-center">
-              You have no subscriptions. Use <Link href="/search">search</Link>{" "}
-              to find any.
+              )}
             </div>
-          )}
+          </div>
+
+          <div className="flex flex-col">
+            <Divider color="primary" className="py-6 text-lg">
+              your subscriptions
+            </Divider>
+
+            <div className="flex flex-wrap justify-center">
+              {library && library.subscriptions.length > 0 ? (
+                library.subscriptions.map((subscription) => (
+                  <Link
+                    key={subscription.id}
+                    href={`/playlist/${subscription.playlistId}`}
+                  >
+                    <PlaylistCard
+                      title={subscription.title}
+                      cover={subscription.cover}
+                      duration={subscription.duration}
+                      tracks={subscription.tracks}
+                      subscribers={subscription.subscribers}
+                      dropdown={
+                        <SubscriptionDropdown>
+                          <Button
+                            color="primary"
+                            size="sm"
+                            onClick={() => unsubscribe(subscription.id)}
+                            disabled={isUnsubscriptionLoading}
+                            loading={isUnsubscriptionLoading}
+                          >
+                            Unsubscribe
+                          </Button>
+                        </SubscriptionDropdown>
+                      }
+                    />
+                  </Link>
+                ))
+              ) : (
+                <div className="m-4 text-center">
+                  You have no subscriptions. Use{" "}
+                  <Link href="/search">search</Link> to find any.
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }
-
-interface UploadsDropdownProps {
-  children: React.ReactNode;
-}
-
-const UploadsDropdown: React.FC<UploadsDropdownProps> = ({ children }) => {
-  return (
-    <Dropdown
-      horizontal="left"
-      vertical="middle"
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      }}
-    >
-      <Dropdown.Toggle size="sm">
-        <EllipsisIcon />
-      </Dropdown.Toggle>
-
-      <Dropdown.Menu className="w-64 m-1">{children}</Dropdown.Menu>
-    </Dropdown>
-  );
-};
 
 interface PlaylistDropdownProps {
   children: React.ReactNode;
@@ -251,12 +184,13 @@ const PlaylistDropdown: React.FC<PlaylistDropdownProps> = ({ children }) => {
     <Dropdown
       horizontal="left"
       vertical="middle"
+      className="p-3"
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
       }}
     >
-      <Dropdown.Toggle size="sm" color="primary">
+      <Dropdown.Toggle size="sm" color="ghost">
         <EllipsisIcon />
       </Dropdown.Toggle>
 
@@ -276,12 +210,13 @@ const SubscriptionDropdown: React.FC<SubscriptionDropdownProps> = ({
     <Dropdown
       horizontal="left"
       vertical="middle"
+      className="p-3"
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
       }}
     >
-      <Dropdown.Toggle size="sm" color="primary">
+      <Dropdown.Toggle size="sm" color="ghost">
         <EllipsisIcon />
       </Dropdown.Toggle>
 
