@@ -19,8 +19,8 @@ interface Request extends NextApiRequest {
   body: {
     title: string | undefined;
     artist: string | undefined;
-    source: string;
-    duration: number;
+    source: string | undefined;
+    duration: number | undefined;
   };
 }
 
