@@ -34,8 +34,6 @@ export default function Library() {
     useUnsubscribe();
 
   const createPlaylist = async (title: string, file?: File) => {
-    toggleVisible();
-
     const id = uuidv4();
     mutateCreation({ id, title, file });
   };

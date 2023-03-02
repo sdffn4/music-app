@@ -48,10 +48,21 @@ const CreatePlaylistModal: React.FC<CreatePlaylistModalProps> = ({
   };
 
   const create = () => {
+    toggleVisible();
+
+    setPreview("");
     setFile(undefined);
     setTitle("");
 
     createPlaylist(title, file);
+  };
+
+  const cancel = () => {
+    toggleVisible();
+
+    setPreview("");
+    setFile(undefined);
+    setTitle("");
   };
 
   return (
@@ -97,12 +108,7 @@ const CreatePlaylistModal: React.FC<CreatePlaylistModalProps> = ({
         >
           Create
         </Button>
-        <Button
-          size="sm"
-          color="ghost"
-          onClick={toggleVisible}
-          disabled={isLoading}
-        >
+        <Button size="sm" color="ghost" onClick={cancel} disabled={isLoading}>
           Cancel
         </Button>
       </Modal.Actions>
