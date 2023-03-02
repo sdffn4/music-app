@@ -1,7 +1,13 @@
+import axios from "axios";
 import type { LibraryApi } from "@/pages/api/library";
-
-import { addTrackToPlaylist } from "@/lib/fetchers";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+const addTrackToPlaylist = async (args: {
+  playlistId: string;
+  trackId: string;
+}) => {
+  return (await axios.post(`/api/track/add`, args)).data;
+};
 
 const useAddTrack = () => {
   const queryClient = useQueryClient();

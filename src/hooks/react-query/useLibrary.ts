@@ -1,10 +1,11 @@
-import { fetchLibrary } from "@/lib/fetchers";
+import axios from "axios";
+import { LibraryApi } from "@/pages/api/library";
 import { useQuery } from "@tanstack/react-query";
 
 const useLibrary = () => {
   return useQuery({
     queryKey: ["library"],
-    queryFn: fetchLibrary,
+    queryFn: async () => (await axios.get<LibraryApi>(`/api/library`)).data,
     staleTime: 1000 * 60,
   });
 };

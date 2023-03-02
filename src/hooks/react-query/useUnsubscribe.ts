@@ -1,7 +1,10 @@
+import axios from "axios";
 import { LibraryApi } from "@/pages/api/library";
-
-import { unsubscribeFromPlaylist } from "@/lib/fetchers";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+const unsubscribeFromPlaylist = async (args: { subscriptionId: string }) => {
+  return (await axios.post(`/api/playlist/unsubscribe`, args)).data;
+};
 
 const useUnsubscribe = () => {
   const queryClient = useQueryClient();

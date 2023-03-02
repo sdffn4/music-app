@@ -1,6 +1,10 @@
-import { checkAllTracks } from "@/lib/fetchers";
+import axios from "axios";
 import { LibraryApi } from "@/pages/api/library";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+const checkAllTracks = async (args: { subscriptionId: string }) => {
+  return (await axios.put(`/api/check_all_tracks`, args)).data;
+};
 
 const useCheckAllTracks = () => {
   const queryClient = useQueryClient();

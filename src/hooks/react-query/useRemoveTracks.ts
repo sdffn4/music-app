@@ -1,7 +1,13 @@
+import axios from "axios";
 import { LibraryApi } from "@/pages/api/library";
-
-import { removeTracksFromPlaylist } from "@/lib/fetchers";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+const removeTracksFromPlaylist = async (args: {
+  playlistId: string;
+  tracks: string[];
+}) => {
+  return (await axios.post(`/api/track/remove`, args)).data;
+};
 
 const useRemoveTracks = () => {
   const queryClient = useQueryClient();

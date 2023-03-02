@@ -1,7 +1,23 @@
+import axios from "axios";
 import { LibraryApi } from "@/pages/api/library";
-
-import { subscribeToPlaylist } from "@/lib/fetchers";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+const subscribeToPlaylist = async (args: {
+  id: string;
+  playlistId: string;
+  title: string;
+  duration: number;
+  cover: string;
+  tracks: number;
+  subscribers: number;
+}) => {
+  return (
+    await axios.post(`/api/playlist/subscribe`, {
+      id: args.id,
+      playlistId: args.playlistId,
+    })
+  ).data;
+};
 
 const useSubscribe = () => {
   const queryClient = useQueryClient();

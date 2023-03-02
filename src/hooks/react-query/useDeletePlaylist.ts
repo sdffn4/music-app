@@ -1,13 +1,17 @@
 import { LibraryApi } from "@/pages/api/library";
 
-import { removePlaylist } from "@/lib/fetchers";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+
+const deletePlaylist = async (args: { playlistId: string }) => {
+  return (await axios.post(`/api/playlist/remove`, args)).data;
+};
 
 const useDeletePlaylist = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: removePlaylist,
+    mutationFn: deletePlaylist,
     onMutate: async ({ playlistId }) => {
       await queryClient.cancelQueries({ queryKey: ["library"] });
 
