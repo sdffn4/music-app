@@ -76,10 +76,13 @@ export default async function handler(
           id: true,
           title: true,
           cover: true,
-          duration: true,
           tracks: {
             select: {
-              trackId: true,
+              track: {
+                select: {
+                  duration: true,
+                },
+              },
             },
           },
           subscriptions: {
@@ -95,7 +98,13 @@ export default async function handler(
         },
       })
     ).map((playlist) => ({
-      ...playlist,
+      id: playlist.id,
+      title: playlist.title,
+      cover: playlist.cover,
+      duration: playlist.tracks.reduce(
+        (acc, { track }) => (acc += track.duration),
+        0
+      ),
       tracks: playlist.tracks.length,
       subscribers: playlist.subscriptions.length,
     }));

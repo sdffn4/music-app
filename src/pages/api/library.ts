@@ -26,10 +26,14 @@ export default async function handler(
             id: true,
             title: true,
             cover: true,
-            duration: true,
             tracks: {
               select: {
-                trackId: true,
+                track: {
+                  select: {
+                    id: true,
+                    duration: true,
+                  },
+                },
               },
             },
             subscriptions: {
@@ -53,10 +57,14 @@ export default async function handler(
                 id: true,
                 title: true,
                 cover: true,
-                duration: true,
                 tracks: {
                   select: {
-                    trackId: true,
+                    track: {
+                      select: {
+                        id: true,
+                        duration: true,
+                      },
+                    },
                   },
                 },
                 subscriptions: {
@@ -77,13 +85,20 @@ export default async function handler(
       playlists: resp.playlists.map((playlist) => ({
         ...playlist,
         subscribers: playlist.subscriptions.length,
-        tracks: playlist.tracks.map((track) => track.trackId),
+        duration: playlist.tracks.reduce(
+          (acc, { track }) => (acc += track.duration),
+          0
+        ),
+        tracks: playlist.tracks.map(({ track }) => track.id),
       })),
       subscriptions: resp.subscriptions.map((subscription) => ({
         id: subscription.id,
         playlistId: subscription.playlist.id,
         cover: subscription.playlist.cover,
-        duration: subscription.playlist.duration,
+        duration: subscription.playlist.tracks.reduce(
+          (acc, { track }) => (acc += track.duration),
+          0
+        ),
         title: subscription.playlist.title,
         tracks: subscription.playlist.tracks.length,
         subscribers: subscription.playlist.subscriptions.length,

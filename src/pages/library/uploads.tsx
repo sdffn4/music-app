@@ -13,9 +13,6 @@ import { parseBlob } from "music-metadata-browser";
 import { UploadApiResponse } from "cloudinary";
 import { CreateTrackApi } from "../api/create_track";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { GetUploadsApi } from "../api/get_uploads";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/router";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../api/auth/[...nextauth]";
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from "next";
@@ -148,14 +145,12 @@ export default function Uploads({
                       mutateAdd({
                         playlistId,
                         trackId: track.id,
-                        duration: track.duration,
                       })
                     }
                     removeTrackFromPlaylist={(playlistId) =>
                       mutateRemove({
                         playlistId,
                         tracks: [track.id],
-                        duration: track.duration,
                       })
                     }
                   />

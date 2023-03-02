@@ -45,7 +45,6 @@ export const getStaticProps = async (ctx: GetStaticPropsContext) => {
     select: {
       id: true,
       title: true,
-      duration: true,
       cover: true,
       user: {
         select: {
@@ -84,7 +83,10 @@ export const getStaticProps = async (ctx: GetStaticPropsContext) => {
         id: resp.id,
         title: resp.title,
         cover: resp.cover,
-        duration: resp.duration,
+        duration: resp.tracks.reduce(
+          (acc, { track }) => (acc += track.duration),
+          0
+        ),
         subscribers: resp.subscriptions.length,
         user: resp.user,
         tracks: resp.tracks.map((track) => ({ ...track.track })),
