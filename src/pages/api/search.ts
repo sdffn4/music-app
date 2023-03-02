@@ -21,7 +21,7 @@ export type SearchApiPlaylists = Array<{
   cover: string;
   tracks: number;
   duration: number;
-  subscriptions: number;
+  subscribers: number;
 }>;
 
 export type SearchApi = {
@@ -97,7 +97,7 @@ export default async function handler(
     ).map((playlist) => ({
       ...playlist,
       tracks: playlist.tracks.length,
-      subscriptions: playlist.subscriptions.length,
+      subscribers: playlist.subscriptions.length,
     }));
 
     return res.status(200).json({ tracks, playlists });

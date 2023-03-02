@@ -5,28 +5,6 @@ import { authOptions } from "./auth/[...nextauth]";
 
 import prisma from "../../lib/prismadb";
 
-export interface LibraryApi {
-  playlists: {
-    id: string;
-    title: string;
-    tracks: string[];
-    cover: string;
-  }[];
-  subscriptions: {
-    id: string;
-    playlist: {
-      id: string;
-      title: string;
-      cover: string;
-      tracks: string[];
-    };
-    uncheckedTracks: {
-      trackId: string;
-      subscriptionId: string;
-    }[];
-  }[];
-}
-
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<LibraryApi>
@@ -48,15 +26,15 @@ export default async function handler(
             id: true,
             title: true,
             cover: true,
-            user: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
+            duration: true,
             tracks: {
               select: {
                 trackId: true,
+              },
+            },
+            subscriptions: {
+              select: {
+                id: true,
               },
             },
           },
@@ -75,15 +53,15 @@ export default async function handler(
                 id: true,
                 title: true,
                 cover: true,
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                  },
-                },
+                duration: true,
                 tracks: {
                   select: {
                     trackId: true,
+                  },
+                },
+                subscriptions: {
+                  select: {
+                    id: true,
                   },
                 },
               },
@@ -93,33 +71,54 @@ export default async function handler(
       },
     });
 
-    return res.status(200).json(
-      resp
-        ? {
-            subscriptions: resp.subscriptions.map((subscription) => ({
-              id: subscription.id,
-              playlist: {
-                ...subscription.playlist,
-                tracks: subscription.playlist.tracks.map(
-                  (track) => track.trackId
-                ),
-              },
-              uncheckedTracks: subscription.uncheckedTracks,
-            })),
-            playlists: resp.playlists.map((playlist) => ({
-              id: playlist.id,
-              title: playlist.title,
-              cover: playlist.cover,
-              user: playlist.user,
-              tracks: playlist.tracks.map((track) => track.trackId),
-            })),
-          }
-        : {
-            subscriptions: [],
-            playlists: [],
-          }
-    );
+    if (!resp) return res.status(404);
+
+    return res.status(200).json({
+      playlists: resp.playlists.map((playlist) => ({
+        ...playlist,
+        subscribers: playlist.subscriptions.length,
+        tracks: playlist.tracks.map((track) => track.trackId),
+      })),
+      subscriptions: resp.subscriptions.map((subscription) => ({
+        id: subscription.id,
+        playlistId: subscription.playlist.id,
+        cover: subscription.playlist.cover,
+        duration: subscription.playlist.duration,
+        title: subscription.playlist.title,
+        tracks: subscription.playlist.tracks.length,
+        subscribers: subscription.playlist.subscriptions.length,
+        uncheckedTracks: subscription.uncheckedTracks,
+      })),
+    });
   } catch (error) {
     return res.status(500);
   }
+}
+
+type Playlist = {
+  id: string;
+  title: string;
+  cover: string;
+  duration: number;
+  subscribers: number;
+  tracks: string[];
+};
+
+type Subscription = {
+  id: string;
+  playlistId: string;
+  title: string;
+  cover: string;
+  duration: number;
+  subscribers: number;
+  tracks: number;
+  uncheckedTracks: Array<{
+    trackId: string;
+    subscriptionId: string;
+  }>;
+};
+
+export interface LibraryApi {
+  playlists: Playlist[];
+  subscriptions: Subscription[];
 }

@@ -5,7 +5,9 @@ export type GetPlaylistsApi = Array<{
   id: string;
   title: string;
   cover: string;
-  subscriptions: number;
+  tracks: number;
+  duration: number;
+  subscribers: number;
 }>;
 
 export default async function handler(
@@ -20,10 +22,15 @@ export default async function handler(
         id: true,
         title: true,
         cover: true,
-
-        _count: {
+        duration: true,
+        tracks: {
           select: {
-            subscriptions: true,
+            trackId: true,
+          },
+        },
+        subscriptions: {
+          select: {
+            id: true,
           },
         },
       },
@@ -36,8 +43,12 @@ export default async function handler(
 
     return res.status(200).json(
       resp.map((playlist) => ({
-        ...playlist,
-        subscriptions: playlist._count.subscriptions,
+        id: playlist.id,
+        title: playlist.title,
+        cover: playlist.cover,
+        duration: playlist.duration,
+        tracks: playlist.tracks.length,
+        subscribers: playlist.subscriptions.length,
       }))
     );
   } catch (error) {
