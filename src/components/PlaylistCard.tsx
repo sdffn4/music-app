@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { NoteIcon, TimerIcon, UserIcon } from "./icons";
 
 interface PlaylistCardProps {
   cover: string;
@@ -25,14 +26,18 @@ const PlaylistCard: React.FC<PlaylistCardProps> = ({
       </div>
 
       <div className="w-full flex justify-between">
-        <div className="hidden sm:flex sm:flex-col sm:justify-evenly sm:m-3 truncate">
-          <p className="font-semibold text-lg truncate">{title}</p>
-          <div className="space-x-3 text-sm opacity-80">
-            <span>{`${tracks} track${tracks === 1 ? "" : "s"}`}</span>
-            <span>{`${duration} minute${duration === 1 ? "" : "s"}`}</span>
-            <span>{`${subscribers} subscriber${
-              subscribers === 1 ? "" : "s"
-            }`}</span>
+        <div className="hidden sm:w-full sm:flex sm:flex-col sm:justify-evenly sm:m-3">
+          <p className="font-semibold text-lg">{title}</p>
+          <div className="flex space-x-3 text-sm opacity-80">
+            <span className="flex items-center space-x-1">
+              <NoteIcon /> <span>{tracks}</span>
+            </span>
+            <span className="flex items-center space-x-1">
+              <TimerIcon /> <span>{formatDuration(duration)}</span>
+            </span>
+            <span className="flex items-center space-x-1">
+              <UserIcon /> <span>{subscribers}</span>
+            </span>
           </div>
         </div>
 
@@ -42,6 +47,15 @@ const PlaylistCard: React.FC<PlaylistCardProps> = ({
       </div>
     </div>
   );
+};
+
+const formatDuration = (duration: number) => {
+  const minutes = Math.round(duration / 60);
+  const seconds = Math.round(duration % 60);
+
+  return `${minutes < 10 ? `0${minutes}` : minutes}:${
+    seconds < 10 ? `0${seconds}` : seconds
+  }`;
 };
 
 export default PlaylistCard;
