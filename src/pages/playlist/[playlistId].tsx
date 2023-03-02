@@ -81,7 +81,12 @@ export const getStaticProps = async (ctx: GetStaticPropsContext) => {
   return {
     props: {
       playlist: {
-        ...resp,
+        id: resp.id,
+        title: resp.title,
+        cover: resp.cover,
+        duration: resp.duration,
+        subscribers: resp.subscriptions.length,
+        user: resp.user,
         tracks: resp.tracks.map((track) => ({ ...track.track })),
       },
     },
@@ -97,7 +102,7 @@ export default function Playlist({
   const { data: library, isLoading: isLibraryLoading } = useLibrary();
 
   const subscription = library?.subscriptions
-    .filter((subscription) => subscription.playlist.id === playlist.id)
+    .filter((subscription) => subscription.playlistId === playlist.id)
     .pop();
 
   const isSessionUserSubscribed = Boolean(subscription);
@@ -167,6 +172,10 @@ export default function Playlist({
       id: uuidv4(),
       playlistId: playlist.id,
       title: playlist.title,
+      duration: playlist.duration,
+      cover: playlist.cover,
+      tracks: playlist.tracks.length,
+      subscribers: playlist.subscribers,
     });
   };
 
@@ -203,23 +212,17 @@ export default function Playlist({
           <div className="pt-3 space-y-1">
             <h3 className="font-semibold text-lg truncate">{playlist.title}</h3>
 
-            <div className="truncate">
+            <div className="space-x-3 text-sm opacity-80">
               <span>{`${playlist.tracks.length} track${
-                playlist.tracks.length !== 1 ? "s" : ""
-              } `}</span>
-              •
-              <span>
-                {` ${playlist.duration} minute${
-                  playlist.duration !== 1 ? "s" : ""
-                }`}
-              </span>
+                playlist.tracks.length === 1 ? "" : "s"
+              }`}</span>
+              <span>{`${playlist.duration} minute${
+                playlist.duration === 1 ? "" : "s"
+              }`}</span>
+              <span>{`${playlist.subscribers} subscriber${
+                playlist.subscribers === 1 ? "" : "s"
+              }`}</span>
             </div>
-
-            <span>
-              {`${playlist.subscriptions.length} subscriber${
-                playlist.subscriptions.length !== 1 ? "s" : ""
-              }`}
-            </span>
           </div>
 
           <div className="my-4">

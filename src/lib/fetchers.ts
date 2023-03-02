@@ -67,8 +67,17 @@ export const subscribeToPlaylist = async (args: {
   id: string;
   playlistId: string;
   title: string;
+  duration: number;
+  cover: string;
+  tracks: number;
+  subscribers: number;
 }) => {
-  return (await axios.post(`/api/playlist/subscribe`, args)).data;
+  return (
+    await axios.post(`/api/playlist/subscribe`, {
+      id: args.id,
+      playlistId: args.playlistId,
+    })
+  ).data;
 };
 
 export const unsubscribeFromPlaylist = async (args: {

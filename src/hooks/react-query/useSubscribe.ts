@@ -7,7 +7,15 @@ const useSubscribe = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: subscribeToPlaylist,
-    onMutate: async ({ id, playlistId, title }) => {
+    onMutate: async ({
+      id,
+      playlistId,
+      title,
+      cover,
+      duration,
+      subscribers,
+      tracks,
+    }) => {
       await queryClient.cancelQueries({ queryKey: ["library"] });
 
       const previousLibrary = queryClient.getQueryData<LibraryApi>(["library"]);
@@ -20,8 +28,13 @@ const useSubscribe = () => {
               ...old.subscriptions,
               {
                 id,
-                playlist: { id: playlistId, title, cover: "", tracks: [] },
+                playlistId,
+                title,
+                cover,
+                duration,
+                tracks,
                 uncheckedTracks: [],
+                subscribers: (subscribers += 1),
               },
             ],
           };
