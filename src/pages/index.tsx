@@ -3,19 +3,59 @@ import Link from "next/link";
 
 import PlaylistCard from "@/components/PlaylistCard";
 
-import useGetPlaylists from "@/hooks/react-query/useGetPlaylists";
+import prisma from "../lib/prismadb";
+import { InferGetStaticPropsType } from "next";
 
-export default function Index() {
-  const { data: playlists } = useGetPlaylists();
+export const getStaticProps = async () => {
+  const playlists = await prisma.playlist.findMany({
+    select: {
+      id: true,
+      title: true,
+      cover: true,
+      tracks: {
+        select: {
+          track: {
+            select: {
+              id: true,
+              duration: true,
+            },
+          },
+        },
+      },
+      subscriptions: {
+        select: {
+          id: true,
+        },
+      },
+    },
+    orderBy: {
+      subscriptions: {
+        _count: "desc",
+      },
+    },
+  });
 
-  if (!playlists) {
-    return (
-      <div className="min-h-page flex items-center justify-center">
-        Loading...
-      </div>
-    );
-  }
+  return {
+    revalidate: 60 * 5,
+    props: {
+      playlists: playlists.map((playlist) => ({
+        id: playlist.id,
+        title: playlist.title,
+        cover: playlist.cover,
+        duration: playlist.tracks.reduce(
+          (acc, { track }) => (acc += track.duration),
+          0
+        ),
+        tracks: playlist.tracks.length,
+        subscribers: playlist.subscriptions.length,
+      })),
+    },
+  };
+};
 
+export default function Index({
+  playlists,
+}: InferGetStaticPropsType<typeof getStaticProps>) {
   return (
     <>
       <Head>
@@ -23,7 +63,7 @@ export default function Index() {
       </Head>
 
       <div className="min-h-page">
-        <div className="flex justify-center flex-wrap sm:flex-col lg:flex-row">
+        <div className="flex flex-wrap justify-center">
           {playlists.map((playlist) => {
             return (
               <Link key={playlist.id} href={`/playlist/${playlist.id}`}>
