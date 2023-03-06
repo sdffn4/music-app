@@ -9,37 +9,22 @@ const ChangeableInput: React.FC<ChangeableInputProps> = ({
   text,
   callback,
 }) => {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-
   const [inputValue, setInputValue] = useState(text);
-  const [editMode, setEditMode] = useState(false);
 
-  const onBlur = () => {
-    setEditMode(false);
-    if (inputRef.current) callback(inputRef.current.value);
+  const onBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    callback(e.target.value);
   };
 
   return (
     <div className="font-semibold text-lg">
-      {editMode ? (
-        <input
-          autoFocus
-          ref={inputRef}
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onFocus={(e) => e.target.select()}
-          onBlur={onBlur}
-          className="outline-0 text-center focus:bg-primary focus:bg-opacity-60 rounded-full"
-        />
-      ) : (
-        <p
-          className="hover:cursor-pointer hover:bg-primary hover:bg-opacity-60 rounded-full px-3"
-          onClick={() => setEditMode((previous) => !previous)}
-        >
-          {text}
-        </p>
-      )}
+      <input
+        className="text-violet11 shadow-violet7 focus:shadow-violet8 text-center inline-flex h-[35px] w-full flex-1 items-center justify-center rounded-[4px] px-[10px] text-[15px] leading-none shadow-[0_0_0_1px] outline-none focus:shadow-[0_0_0_2px] hover:cursor-pointer focus:cursor-text"
+        type="text"
+        value={inputValue}
+        onFocus={(e) => e.target.select()}
+        onBlur={onBlur}
+        onChange={(e) => setInputValue(e.target.value)}
+      />
     </div>
   );
 };

@@ -1,10 +1,9 @@
-import Image from "next/image";
 import { useRef } from "react";
+import * as Avatar from "@radix-ui/react-avatar";
 
 interface ChangeableImageProps {
   src: string;
   alt: string;
-
   callback: (file: File) => void;
 }
 
@@ -27,12 +26,22 @@ const ChangeableImage: React.FC<ChangeableImageProps> = ({
 
   return (
     <div>
-      <div
-        className="w-32 h-32 relative hover:cursor-pointer border border-primary border-opacity-60"
+      <Avatar.Root
+        className="bg-blackA3 inline-flex h-44 w-h-44 select-none items-center justify-center overflow-hidden rounded-full align-middle hover:cursor-pointer"
         onClick={chooseFile}
       >
-        <Image fill src={src} alt={alt} />
-      </div>
+        <Avatar.Image
+          className="h-full w-full rounded-[inherit] object-cover"
+          src={src}
+          alt={alt}
+        />
+        <Avatar.Fallback
+          className="text-violet11 leading-1 flex h-full w-full items-center justify-center bg-white text-[15px] font-medium"
+          delayMs={600}
+        >
+          UI
+        </Avatar.Fallback>
+      </Avatar.Root>
 
       <input
         type="file"
