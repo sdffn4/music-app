@@ -47,10 +47,12 @@ const useCreatePlaylist = () => {
 
   return useMutation({
     mutationFn: createPlaylist,
-    onMutate: async ({ id, title }) => {
+    onMutate: async ({ id, title, file }) => {
       await queryClient.cancelQueries({ queryKey: ["library"] });
 
       const previousLibrary = queryClient.getQueryData<LibraryApi>(["library"]);
+
+      const cover = file ? URL.createObjectURL(file) : "";
 
       queryClient.setQueryData<LibraryApi>(["library"], (old) => {
         if (old) {
@@ -60,7 +62,7 @@ const useCreatePlaylist = () => {
               {
                 id,
                 title,
-                cover: "",
+                cover,
                 duration: 0,
                 subscribers: 0,
                 tracks: [],
@@ -73,13 +75,14 @@ const useCreatePlaylist = () => {
         return old;
       });
 
-      return { previousLibrary };
+      return { previousLibrary, cover };
     },
     onError: (_, __, context) => {
       queryClient.setQueryData(["library"], context?.previousLibrary);
     },
-    onSettled: () => {
+    onSettled: (_, __, ___, ctx) => {
       queryClient.invalidateQueries({ queryKey: ["library"] });
+      if (ctx) URL.revokeObjectURL(ctx.cover);
     },
   });
 };
