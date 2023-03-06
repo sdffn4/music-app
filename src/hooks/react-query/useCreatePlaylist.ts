@@ -1,37 +1,16 @@
 import axios from "axios";
-import { LibraryApi } from "@/pages/api/library";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { UploadApiResponse } from "cloudinary";
+import type { LibraryApi } from "@/pages/api/library";
 
+import uploadFile from "@/lib/uploadFile";
 import { CreatePlaylistApi } from "@/pages/api/playlist/create";
-import { AuthorizeUploadApi } from "@/pages/api/authorize_upload";
-
-const uploadImage = async (file: File) => {
-  const signData = (
-    await axios.post<AuthorizeUploadApi>(`/api/authorize_upload`, {
-      folder: "covers",
-    })
-  ).data;
-
-  const url = `https://api.cloudinary.com/v1_1/${signData.cloud_name}/image/upload`;
-
-  const formData = new FormData();
-
-  formData.append("file", file);
-  formData.append("api_key", signData.api_key);
-  formData.append("timestamp", signData.timestamp);
-  formData.append("signature", signData.signature);
-  formData.append("folder", "covers");
-
-  return (await axios.post<UploadApiResponse>(url, formData)).data.secure_url;
-};
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const createPlaylist = async (args: {
   id: string;
   title: string;
   file: File | undefined;
 }) => {
-  const secure_url = args.file ? await uploadImage(args.file) : "";
+  const secure_url = args.file ? await uploadFile("covers", args.file) : "";
 
   return (
     await axios.post<CreatePlaylistApi>(`/api/playlist/create`, {
