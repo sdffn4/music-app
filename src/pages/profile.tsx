@@ -6,13 +6,23 @@ import {
   signOut as nextSignOut,
 } from "next-auth/react";
 
-import { Alert, Button, Input } from "react-daisyui";
+import { Alert, Button, Divider, Input, Toast } from "react-daisyui";
+import ChangeableImage from "@/components/ChangeableImage";
+import useUser from "@/hooks/react-query/useUser";
+import useMutateUser from "@/hooks/react-query/useMutateUser";
+import ChangeableInput from "@/components/ChangeableInput";
+import axios from "axios";
 
 export default function Profile() {
-  const { data: session, status: sessionStatus } = useSession();
+  const { status } = useSession();
+
+  const { data: user, isLoading, isSuccess } = useUser();
+  const { mutate: mutateUser } = useMutateUser();
 
   const [inputEmail, setInputEmail] = useState<string>("");
   const [noticeUser, setNoticeUser] = useState<boolean>(false);
+
+  const [deletionToast, setDeletionToast] = useState(false);
 
   const signIn = () => {
     nextSignIn("email", { email: inputEmail, redirect: false });
@@ -23,7 +33,12 @@ export default function Profile() {
     nextSignOut({ redirect: false });
   };
 
-  if (sessionStatus === "loading") {
+  const deleteAccount = () => {
+    signOut();
+    axios.delete(`/api/user`);
+  };
+
+  if (status === "loading" || isLoading) {
     return (
       <div className="min-h-page flex justify-center items-center">
         Loading...
@@ -31,11 +46,44 @@ export default function Profile() {
     );
   }
 
-  if (sessionStatus === "authenticated") {
+  if (status === "authenticated" && isSuccess) {
+    const updateAvatar = async (file: File) => {
+      mutateUser({ avatar: file });
+    };
+
+    const updateName = async (name: string) => {
+      if (name !== user.name) mutateUser({ name });
+    };
+
     return (
       <div className="min-h-page flex flex-col justify-center items-center space-y-4">
-        <p>Username: {session.user?.name}</p>
-        <Button onClick={signOut}>Sign out</Button>
+        <ChangeableImage
+          src={user.avatar ? user.avatar : "/vercel.svg"}
+          alt="avatar"
+          callback={updateAvatar}
+        />
+
+        <ChangeableInput text={user.name} callback={updateName} />
+
+        <Divider className="m-10" />
+
+        <Button
+          size="xs"
+          color="ghost"
+          className="hover:bg-error hover:text-error-content"
+          onClick={deleteAccount}
+        >
+          Delete account
+        </Button>
+
+        <Button
+          size="xs"
+          color="ghost"
+          className="hover:bg-warning hover:text-warning-content"
+          onClick={signOut}
+        >
+          Sign out
+        </Button>
       </div>
     );
   }
@@ -43,6 +91,8 @@ export default function Profile() {
   return (
     <div className="min-h-page flex flex-col justify-center items-center space-y-4">
       <Input
+        size="md"
+        className="text-lg text-center"
         type="email"
         placeholder="Enter your email"
         value={inputEmail}
@@ -55,8 +105,8 @@ export default function Profile() {
         </Alert>
       ) : null}
 
-      <Button disabled={!inputEmail} onClick={signIn}>
-        Sign in / Sign up
+      <Button size="sm" color="accent" disabled={!inputEmail} onClick={signIn}>
+        Enter the app
       </Button>
     </div>
   );
