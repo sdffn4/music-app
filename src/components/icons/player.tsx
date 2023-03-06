@@ -17,11 +17,11 @@ export const PlayIcon = () => <RiPlayFill className={`${playerIcon}`} />;
 export const PauseIcon = () => <RiPauseFill className={`${playerIcon}`} />;
 
 export const SkipBackwardIcon = () => (
-  <RiRewindFill className={`${playerIcon} opacity-50`} />
+  <RiRewindFill className={`${playerIcon}`} />
 );
 
 export const SkipForwardIcon = () => (
-  <RiSpeedFill className={`${playerIcon} opacity-50`} />
+  <RiSpeedFill className={`${playerIcon}`} />
 );
 
 export const ShuffleIconActive = () => (
