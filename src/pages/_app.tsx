@@ -128,9 +128,9 @@ const BottomNavigation: React.FC = () => {
 
   return (
     <div className="h-btm-nav flex flex-col sticky bottom-0 bg-base-100 bg-opacity-70 backdrop-blur-lg divide-y divide-neutral divide-opacity-10">
-      <Range
-        size="xs"
-        color="primary"
+      <input
+        type="range"
+        className="m-0 p-0 h-2"
         value={currentTime}
         max={Math.round(currentTrack?.duration ?? 0)}
         onChange={(e) => {
