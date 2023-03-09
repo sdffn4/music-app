@@ -3,6 +3,7 @@ import type { TrackType } from "@/types";
 import { Button, Dropdown } from "react-daisyui";
 
 import { EllipsisIcon, GoBackIcon } from "./icons";
+import TrackDropdown from "./TrackDropdown";
 
 interface TrackProps {
   index: number;
@@ -11,7 +12,6 @@ interface TrackProps {
   onClick: () => void;
   isStaged?: boolean;
   restore?: () => void;
-  dropdown: React.ReactNode;
 }
 
 const Track: React.FC<TrackProps> = ({
@@ -21,7 +21,6 @@ const Track: React.FC<TrackProps> = ({
   isActive,
   onClick,
   restore,
-  dropdown,
 }) => {
   return (
     <div className="flex justify-between items-center rounded py-1">
@@ -62,7 +61,9 @@ const Track: React.FC<TrackProps> = ({
               <EllipsisIcon />
             </Dropdown.Toggle>
 
-            <Dropdown.Menu className="w-52 m-1">{dropdown}</Dropdown.Menu>
+            <Dropdown.Menu className="w-52 m-1">
+              <TrackDropdown index={index} track={track} />
+            </Dropdown.Menu>
           </Dropdown>
         )}
       </div>

@@ -12,11 +12,11 @@ import { useSession } from "next-auth/react";
 
 import usePlayerStore from "@/store";
 
-import useLibrary from "@/hooks/react-query/useLibrary";
-import useSubscribe from "@/hooks/react-query/useSubscribe";
-import useUnsubscribe from "@/hooks/react-query/useUnsubscribe";
-import useRemoveTracks from "@/hooks/react-query/useRemoveTracks";
-import useCheckAllTracks from "@/hooks/react-query/useCheckAllTracks";
+import useLibrary from "@/hooks/react-query/queries/useLibrary";
+import useSubscribe from "@/hooks/react-query/mutations/useSubscribe";
+import useUnsubscribe from "@/hooks/react-query/mutations/useUnsubscribe";
+import useRemoveTracks from "@/hooks/react-query/mutations/useRemoveTracks";
+import useCheckAllTracks from "@/hooks/react-query/mutations/useCheckAllTracks";
 
 import Image from "next/image";
 import Track from "@/components/Track";
@@ -24,8 +24,9 @@ import { Button } from "react-daisyui";
 
 import { v4 as uuidv4 } from "uuid";
 import prisma from "../../lib/prismadb";
-import useAddTrack from "@/hooks/react-query/useAddTrack";
-import TrackDropdown from "@/components/TrackDropdown";
+import { NoteIcon, TimerIcon, UserIcon } from "@/components/icons";
+import { formatDuration } from "@/lib/utils";
+import Head from "next/head";
 
 export const getStaticPaths: GetStaticPaths = async () => {
   return {
@@ -109,8 +110,6 @@ export default function Playlist({
 
   const isSessionUserSubscribed = Boolean(subscription);
 
-  const { mutate: mutateAdd } = useAddTrack();
-
   const { mutate: mutateRemove } = useRemoveTracks();
 
   const { mutate: checkAllTracks } = useCheckAllTracks();
@@ -187,101 +186,87 @@ export default function Playlist({
     }
   };
 
-  const addTrackToPlaylist = (playlistId: string, trackId: string) => {
-    mutateAdd({ playlistId, trackId });
-  };
-
-  const removeTrackFromPlaylist = (playlistId: string, trackId: string) => {
-    if (playlist.id === playlistId) {
-      stageTrack(trackId);
-    } else {
-      mutateRemove({ playlistId, tracks: [trackId] });
-    }
-  };
-
   return (
-    <div className="min-h-page divide-y divide-primary divide-opacity-60">
-      <div className="sm:flex p-4 pb-0 sm:pb-4 text-center sm:text-start">
-        <div className="relative w-44 h-44 border border-primary border-opacity-80 m-auto sm:m-0">
-          <Image
-            alt="cover"
-            src={playlist.cover ? playlist.cover : "/vercel.svg"}
-            fill
-          />
-        </div>
+    <>
+      <Head>
+        <title>{playlist.title}</title>
+      </Head>
 
-        <div className="flex flex-col justify-evenly px-6">
-          <div className="pt-3 space-y-1">
-            <h3 className="font-semibold text-lg truncate">{playlist.title}</h3>
+      <div className="min-h-page">
+        <div className="sm:flex p-4 pb-0 sm:pb-4 text-center sm:text-start border-b border-primary border-opacity-10">
+          <div className="relative w-44 h-44 border border-primary border-opacity-80 m-auto sm:m-0">
+            <Image
+              alt="cover"
+              src={playlist.cover ? playlist.cover : "/vercel.svg"}
+              fill
+            />
+          </div>
 
-            <div className="space-x-3 text-sm opacity-80">
-              <span>{`${playlist.tracks.length} track${
-                playlist.tracks.length === 1 ? "" : "s"
-              }`}</span>
-              <span>{`${playlist.duration} minute${
-                playlist.duration === 1 ? "" : "s"
-              }`}</span>
-              <span>{`${playlist.subscribers} subscriber${
-                playlist.subscribers === 1 ? "" : "s"
-              }`}</span>
+          <div className="flex flex-col justify-evenly px-6">
+            <div className="pt-3 space-y-1">
+              <h3 className="font-semibold text-lg truncate">
+                {playlist.title}
+              </h3>
+
+              <div className="space-x-3 text-sm opacity-80">
+                <div className="flex space-x-3 text-sm opacity-80">
+                  <span className="flex items-center space-x-1">
+                    <NoteIcon /> <span>{playlist.tracks.length}</span>
+                  </span>
+                  <span className="flex items-center space-x-1">
+                    <TimerIcon />{" "}
+                    <span>{formatDuration(playlist.duration)}</span>
+                  </span>
+                  <span className="flex items-center space-x-1">
+                    <UserIcon /> <span>{playlist.subscribers}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="my-4">
+              {isSessionUserOwner ? null : (
+                <Button
+                  size="sm"
+                  color="primary"
+                  loading={isSubscriptionLoading || isUnsubscriptionLoading}
+                  disabled={
+                    isSubscriptionLoading ||
+                    isUnsubscriptionLoading ||
+                    isLibraryLoading
+                  }
+                  onClick={isSessionUserSubscribed ? unsubscribe : subscribe}
+                >
+                  {isSessionUserSubscribed ? "Unsubscribe" : "Subscribe"}
+                </Button>
+              )}
             </div>
           </div>
+        </div>
 
-          <div className="my-4">
-            {isSessionUserOwner ? null : (
-              <Button
-                size="sm"
-                color="primary"
-                loading={isSubscriptionLoading || isUnsubscriptionLoading}
-                disabled={
-                  isSubscriptionLoading ||
-                  isUnsubscriptionLoading ||
-                  isLibraryLoading
-                }
-                onClick={isSessionUserSubscribed ? unsubscribe : subscribe}
-              >
-                {isSessionUserSubscribed ? "Unsubscribe" : "Subscribe"}
-              </Button>
-            )}
+        {playlist.tracks.length > 0 ? (
+          <div className="divide-y divide-primary divide-opacity-30">
+            {playlist.tracks.map((track, index) => {
+              const isActive = track.id === currentTrack?.id && isPlaying;
+              const isStaged = stagedTracks.includes(track.id);
+
+              return (
+                <Track
+                  key={track.id}
+                  index={index}
+                  track={track}
+                  isStaged={isStaged}
+                  isActive={isActive}
+                  restore={() => restoreTrack(track.id)}
+                  onClick={() => play(track, index)}
+                />
+              );
+            })}
           </div>
-        </div>
+        ) : (
+          <div className="text-center text-lg p-4">This playlist is empty.</div>
+        )}
       </div>
-
-      {playlist.tracks.length > 0 ? (
-        <div className="divide-y divide-primary divide-opacity-30">
-          {playlist.tracks.map((track, index) => {
-            const isActive = track.id === currentTrack?.id && isPlaying;
-            const isStaged = stagedTracks.includes(track.id);
-
-            return (
-              <Track
-                key={track.id}
-                index={index}
-                track={track}
-                isStaged={isStaged}
-                isActive={isActive}
-                restore={() => restoreTrack(track.id)}
-                onClick={() => play(track, index)}
-                dropdown={
-                  <TrackDropdown
-                    trackId={track.id}
-                    playlists={library ? library.playlists : []}
-                    addToQueue={() => addToQueue(track)}
-                    addTrackToPlaylist={(playlistId) =>
-                      addTrackToPlaylist(playlistId, track.id)
-                    }
-                    removeTrackFromPlaylist={(playlistId) =>
-                      removeTrackFromPlaylist(playlistId, track.id)
-                    }
-                  />
-                }
-              />
-            );
-          })}
-        </div>
-      ) : (
-        <div className="text-center text-lg p-4">This playlist is empty.</div>
-      )}
-    </div>
+    </>
   );
 }

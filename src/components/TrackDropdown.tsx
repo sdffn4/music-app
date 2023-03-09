@@ -1,29 +1,42 @@
+import useAddTrack from "@/hooks/react-query/mutations/useAddTrack";
+import useRemoveTracks from "@/hooks/react-query/mutations/useRemoveTracks";
+import useLibrary from "@/hooks/react-query/queries/useLibrary";
+import usePlayerStore from "@/store";
+import { TrackType } from "@/types";
+import { useRouter } from "next/router";
 import { Alert, Button, Checkbox } from "react-daisyui";
 
 interface TrackDropdownProps {
-  trackId: string;
-
-  playlists: Array<{
-    id: string;
-    title: string;
-    cover: string;
-    tracks: string[];
-  }>;
-
-  addToQueue: () => void;
-  removeFromQueue?: () => void;
-  addTrackToPlaylist: (playlistId: string) => void;
-  removeTrackFromPlaylist: (playlistId: string) => void;
+  index: number;
+  track: TrackType;
 }
 
-const TrackDropdown: React.FC<TrackDropdownProps> = ({
-  trackId,
-  playlists,
-  addToQueue,
-  removeFromQueue,
-  addTrackToPlaylist,
-  removeTrackFromPlaylist,
-}) => {
+const TrackDropdown: React.FC<TrackDropdownProps> = ({ index, track }) => {
+  const { pathname } = useRouter();
+
+  const {
+    isPlaying,
+    setIsPlaying,
+    queue,
+    setQueueInstance,
+    addToQueue,
+    removeFromQueue,
+  } = usePlayerStore((state) => state);
+
+  const { data: library } = useLibrary();
+  const playlists = library ? library.playlists : [];
+
+  const { mutate: mutateAdd } = useAddTrack();
+  const { mutate: mutateRemove } = useRemoveTracks();
+
+  const addTrackToPlaylist = (playlistId: string) => {
+    mutateAdd({ playlistId, trackId: track.id });
+  };
+
+  const removeTrackFromPlaylist = (playlistId: string) => {
+    mutateRemove({ playlistId, tracks: [track.id] });
+  };
+
   return (
     <div className="divide-y divide-primary w-full">
       <div className="text-center">
@@ -31,17 +44,17 @@ const TrackDropdown: React.FC<TrackDropdownProps> = ({
           size="xs"
           color="primary"
           className="my-2 w-full"
-          onClick={addToQueue}
+          onClick={() => addToQueue(track)}
         >
           add to queue
         </Button>
 
-        {removeFromQueue ? (
+        {pathname === "/queue" ? (
           <Button
             size="xs"
             color="primary"
             className="my-2 w-full"
-            onClick={removeFromQueue}
+            onClick={() => removeFromQueue(index)}
           >
             remove from queue
           </Button>
@@ -51,7 +64,7 @@ const TrackDropdown: React.FC<TrackDropdownProps> = ({
       <div>
         {playlists.length > 0 ? (
           playlists.map((playlist) => {
-            const hasTrack = playlist.tracks.includes(trackId);
+            const hasTrack = playlist.tracks.includes(track.id);
 
             return (
               <Button

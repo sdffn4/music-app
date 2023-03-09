@@ -1,9 +1,5 @@
 import PlaylistCard from "@/components/PlaylistCard";
 import Track from "@/components/Track";
-import TrackDropdown from "@/components/TrackDropdown";
-import useAddTrack from "@/hooks/react-query/useAddTrack";
-import useLibrary from "@/hooks/react-query/useLibrary";
-import useRemoveTracks from "@/hooks/react-query/useRemoveTracks";
 import useDebounce from "@/hooks/useDebounce";
 import usePlayerStore from "@/store";
 import { TrackType } from "@/types";
@@ -22,12 +18,6 @@ export default function Search() {
 
   const [tracks, setTracks] = useState<SearchApiTracks>([]);
   const [playlists, setPlaylists] = useState<SearchApiPlaylists>([]);
-
-  const { data: library } = useLibrary();
-
-  const { mutate: mutateAdd } = useAddTrack();
-
-  const { mutate: mutateRemove } = useRemoveTracks();
 
   useEffect(() => {
     if (debouncedSearch)
@@ -78,14 +68,6 @@ export default function Search() {
     }
   };
 
-  const addTrackToPlaylist = (playlistId: string, trackId: string) => {
-    mutateAdd({ playlistId, trackId });
-  };
-
-  const removeTrackFromPlaylist = (playlistId: string, trackId: string) => {
-    mutateRemove({ playlistId, tracks: [trackId] });
-  };
-
   return (
     <>
       <Head>
@@ -117,19 +99,6 @@ export default function Search() {
                       isActive={false}
                       track={track}
                       onClick={() => play(track, index)}
-                      dropdown={
-                        <TrackDropdown
-                          trackId={track.id}
-                          playlists={library ? library.playlists : []}
-                          addToQueue={() => addToQueue(track)}
-                          addTrackToPlaylist={(playlistId) =>
-                            addTrackToPlaylist(playlistId, track.id)
-                          }
-                          removeTrackFromPlaylist={(playlistId) =>
-                            removeTrackFromPlaylist(playlistId, track.id)
-                          }
-                        />
-                      }
                     />
                   );
                 })}
