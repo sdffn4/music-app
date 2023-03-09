@@ -6,6 +6,7 @@ const {
   violet,
   red,
   orange,
+  slateDark,
 } = require("@radix-ui/colors");
 
 /** @type {import('tailwindcss').Config} */
@@ -25,6 +26,7 @@ module.exports = {
         ...slate,
         ...violet,
         ...red,
+        ...slateDark,
         ...orange,
       },
       keyframes: {
