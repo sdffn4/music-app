@@ -1,3 +1,4 @@
+import { formatDuration } from "@/lib/utils";
 import Image from "next/image";
 import { NoteIcon, TimerIcon, UserIcon } from "./icons";
 
@@ -47,15 +48,6 @@ const PlaylistCard: React.FC<PlaylistCardProps> = ({
       </div>
     </div>
   );
-};
-
-const formatDuration = (duration: number) => {
-  const minutes = Math.round(duration / 60);
-  const seconds = Math.round(duration % 60);
-
-  return `${minutes < 10 ? `0${minutes}` : minutes}:${
-    seconds < 10 ? `0${seconds}` : seconds
-  }`;
 };
 
 export default PlaylistCard;
