@@ -1,36 +1,29 @@
 import "@/styles/globals.css";
-
 import type { AppProps } from "next/app";
-
+import Image from "next/image";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
 import usePlayerStore from "@/store";
-
-import Link from "next/link";
 import { SessionProvider } from "next-auth/react";
-
 import {
   QueryClient,
   QueryClientProvider,
   Hydrate,
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-
+import { Theme } from "react-daisyui";
+import * as Slider from "@radix-ui/react-slider";
+import { menuButtons } from "../components/icons/menu";
 import {
-  HomeIconActive,
-  HomeIconPassive,
-  LibraryIconActive,
-  LibraryIconPassive,
-  QueueIconActive,
-  QueueIconPassive,
-  SearchIconActive,
-  SearchIconPassive,
-  UserIconActive,
-  UserIconPassive,
-} from "../components/icons/menu";
-
-import { Range, Theme } from "react-daisyui";
-import Player from "@/components/Player";
+  SpeakerLoudIcon,
+  SpeakerModerateIcon,
+  SpeakerOffIcon,
+  SpeakerQuietIcon,
+  TrackNextIcon,
+  TrackPreviousIcon,
+  PauseIcon,
+  PlayIcon,
+} from "@radix-ui/react-icons";
 
 export default function App({
   Component,
@@ -53,36 +46,8 @@ export default function App({
   );
 }
 
-const menuButtons = [
-  {
-    href: "/",
-    activeIcon: <HomeIconActive />,
-    passiveIcon: <HomeIconPassive />,
-  },
-  {
-    href: "/library",
-    activeIcon: <LibraryIconActive />,
-    passiveIcon: <LibraryIconPassive />,
-  },
-  {
-    href: "/queue",
-    activeIcon: <QueueIconActive />,
-    passiveIcon: <QueueIconPassive />,
-  },
-  {
-    href: "/search",
-    activeIcon: <SearchIconActive />,
-    passiveIcon: <SearchIconPassive />,
-  },
-  {
-    href: "/profile",
-    activeIcon: <UserIconActive />,
-    passiveIcon: <UserIconPassive />,
-  },
-];
-
 const BottomNavigation: React.FC = () => {
-  const { pathname } = useRouter();
+  const { pathname, push } = useRouter();
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -96,6 +61,9 @@ const BottomNavigation: React.FC = () => {
 
   const currentInstance = queue.instances[queue.index];
   const currentTrack = currentInstance?.track;
+
+  const hasPreviousTrack = Boolean(queue.instances[queue.index - 1]);
+  const hasNextTrack = Boolean(queue.instances[queue.index + 1]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -123,75 +91,153 @@ const BottomNavigation: React.FC = () => {
     }
   };
 
-  const hasPreviousTrack = Boolean(queue.instances[queue.index - 1]);
-  const hasNextTrack = Boolean(queue.instances[queue.index + 1]);
+  const onCurrentTimeChange = (value: number) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = value;
+      setCurrentTime(value);
+    }
+  };
+
+  const onTimeUpdate = () => {
+    if (audioRef.current) {
+      const thisCurrentTime = Math.round(audioRef.current.currentTime);
+      if (currentTime !== thisCurrentTime) setCurrentTime(thisCurrentTime);
+    }
+  };
+
+  const onEmptied = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      setCurrentTime(0);
+
+      if (isPlaying) audioRef.current.play();
+      else audioRef.current.pause();
+    }
+  };
+
+  const onEnded = () => {
+    if (hasNextTrack) skipForward();
+  };
 
   return (
-    <div className="h-btm-nav flex flex-col sticky bottom-0 bg-base-100 bg-opacity-70 backdrop-blur-lg divide-y divide-neutral divide-opacity-10">
-      <input
-        type="range"
-        className="m-0 p-0 h-2"
-        value={currentTime}
-        max={Math.round(currentTrack?.duration ?? 0)}
-        onChange={(e) => {
-          if (audioRef.current) {
-            audioRef.current.currentTime = +e.target.value;
-            setCurrentTime(+e.target.value);
-          }
-        }}
-      />
-
-      <div className="flex basis-1/2 justify-between">
-        <audio
-          ref={audioRef}
-          src={currentTrack?.source}
-          onEmptied={() => {
-            if (audioRef.current) {
-              audioRef.current.currentTime = 0;
-              setCurrentTime(0);
-
-              if (isPlaying) audioRef.current.play();
-              else audioRef.current.pause();
+    <>
+      <div className="sticky bottom-0 bg-slate-200 bg-opacity-60 backdrop-blur-lg">
+        <div className="flex items-center justify-center mx-2">
+          <Slider.Root
+            className="relative flex items-center select-none touch-none w-full h-5 hover:cursor-pointer"
+            value={[currentTime]}
+            max={
+              currentTrack?.duration ? Math.round(currentTrack.duration) : 100
             }
-          }}
-          onTimeUpdate={() => {
-            if (audioRef.current) {
-              const thisCurrentTime = Math.round(audioRef.current.currentTime);
-              if (currentTime !== thisCurrentTime)
-                setCurrentTime(thisCurrentTime);
-            }
-          }}
-          onEnded={hasNextTrack ? skipForward : undefined}
-        />
+            onValueChange={([value]) => onCurrentTimeChange(value)}
+          >
+            <Slider.Track className="bg-blackA10 relative grow rounded-full h-[3px]">
+              <Slider.Range className="absolute bg-white rounded-full h-full border border-neutral-300" />
+            </Slider.Track>
 
-        <Player
-          title={currentTrack?.title}
-          artist={currentTrack?.artist}
-          isPlaying={isPlaying}
-          hasCurrentTrack={Boolean(currentTrack)}
-          hasPreviousTrack={hasPreviousTrack}
-          hasNextTrack={hasNextTrack}
-          play={() => setIsPlaying(true)}
-          pause={() => setIsPlaying(false)}
-          volume={volume}
-          onVolumeClick={onVolumeClick}
-          onVolumeChange={onVolumeChange}
-          skipBackward={skipBackward}
-          skipForward={skipForward}
-        />
-      </div>
+            <Slider.Thumb className="block w-3 h-3 bg-white shadow-[0_2px_10px] shadow-neutral-800 rounded-lg hover:bg-violet3 focus:outline-none" />
+          </Slider.Root>
+        </div>
 
-      <div className="flex basis-1/2 justify-between items-center">
-        {menuButtons.map((button, index) => (
-          <Link key={index} href={button.href} className="w-full">
-            <div className="flex justify-center items-center">
-              {pathname === button.href
-                ? button.activeIcon
-                : button.passiveIcon}
+        <div className="flex gap-4 border-y border-neutral-400 border-opacity-40">
+          <div className="flex w-1/2 gap-1 sm:w-1/3">
+            <div className="relative m-1 h-14 w-14">
+              <Image src={"/vercel.svg"} alt="cover" fill />
             </div>
-          </Link>
-        ))}
+
+            <div className="min-w-0 self-center">
+              <p className="truncate text-sm font-medium">
+                {currentTrack?.title ?? "No track is set"}
+              </p>
+
+              <p className="truncate text-xs">
+                {currentTrack?.artist ?? "No track is set"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex w-1/2 items-center justify-end gap-2 px-4 sm:w-1/3 sm:justify-center">
+            <button
+              className="inline-flex flex-shrink-0 h-8 w-8 cursor-default items-center justify-center rounded-full shadow-2xl outline-none hover:cursor-pointer"
+              onClick={skipBackward}
+              disabled={!hasPreviousTrack}
+            >
+              <TrackPreviousIcon />
+            </button>
+
+            <button
+              className="inline-flex flex-shrink-0 h-9 w-9 cursor-default items-center justify-center rounded-full shadow-2xl outline-none hover:cursor-pointer"
+              onClick={
+                isPlaying ? () => setIsPlaying(false) : () => setIsPlaying(true)
+              }
+            >
+              {isPlaying ? <PauseIcon /> : <PlayIcon />}
+            </button>
+
+            <button
+              className="inline-flex flex-shrink-0 h-8 w-8 cursor-default items-center justify-center rounded-full shadow-2xl outline-none hover:cursor-pointer"
+              onClick={skipForward}
+              disabled={!hasNextTrack}
+            >
+              <TrackNextIcon />
+            </button>
+          </div>
+
+          <div className="hidden px-4 sm:flex sm:w-1/3 sm:items-center sm:justify-end sm:gap-4">
+            <button
+              className="inline-flex h-7 w-7 cursor-default items-center justify-center rounded-full outline-none hover:cursor-pointer"
+              onClick={onVolumeClick}
+            >
+              {volume === 0 ? (
+                <SpeakerOffIcon />
+              ) : volume < 33 ? (
+                <SpeakerQuietIcon />
+              ) : volume > 33 && volume < 66 ? (
+                <SpeakerModerateIcon />
+              ) : (
+                <SpeakerLoudIcon />
+              )}
+            </button>
+
+            <Slider.Root
+              className="relative flex items-center select-none touch-none w-1/2 h-5 hover:cursor-pointer"
+              value={[volume]}
+              max={100}
+              onValueChange={([value]) => onVolumeChange(value)}
+            >
+              <Slider.Track className="bg-blackA10 relative grow rounded-full h-[3px]">
+                <Slider.Range className="absolute bg-white rounded-full h-full border border-neutral-300" />
+              </Slider.Track>
+
+              <Slider.Thumb className="block w-3 h-3 bg-white shadow-[0_2px_10px] shadow-neutral-800 rounded-lg hover:bg-violet3 focus:outline-none" />
+            </Slider.Root>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-around">
+          {menuButtons.map((button) => (
+            <button
+              key={button.href}
+              onClick={
+                pathname !== button.href ? () => push(button.href) : undefined
+              }
+              className={`w-full flex items-center justify-center p-4 hover:bg-violet-200 ${
+                pathname === button.href ? "bg-violet-200" : null
+              }`}
+            >
+              {button.icon}
+            </button>
+          ))}
+        </div>
       </div>
-    </div>
+
+      <audio
+        ref={audioRef}
+        src={currentTrack?.source}
+        onEmptied={onEmptied}
+        onTimeUpdate={onTimeUpdate}
+        onEnded={onEnded}
+      />
+    </>
   );
 };
