@@ -3,10 +3,10 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 
-import useLibrary from "@/hooks/react-query/useLibrary";
-import useCreatePlaylist from "@/hooks/react-query/useCreatePlaylist";
-import useDeletePlaylist from "@/hooks/react-query/useDeletePlaylist";
-import useUnsubscribe from "@/hooks/react-query/useUnsubscribe";
+import useLibrary from "@/hooks/react-query/queries/useLibrary";
+import useCreatePlaylist from "@/hooks/react-query/mutations/useCreatePlaylist";
+import useDeletePlaylist from "@/hooks/react-query/mutations/useDeletePlaylist";
+import useUnsubscribe from "@/hooks/react-query/mutations/useUnsubscribe";
 
 import { EllipsisIcon } from "@/components/icons";
 import { Button, Divider, Dropdown } from "react-daisyui";
