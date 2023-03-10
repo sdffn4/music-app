@@ -200,7 +200,7 @@ const BottomNavigation: React.FC = () => {
             </button>
 
             <Slider.Root
-              className="relative flex items-center select-none touch-none w-1/2 h-5 hover:cursor-pointer"
+              className="relative flex items-center select-none touch-none w-32 h-5 hover:cursor-pointer"
               value={[volume]}
               max={100}
               onValueChange={([value]) => onVolumeChange(value)}
